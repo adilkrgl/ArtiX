@@ -42,6 +42,8 @@ public class ErpDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(ErpDbContext).Assembly);
+
         base.OnModelCreating(modelBuilder);
     }
 }
