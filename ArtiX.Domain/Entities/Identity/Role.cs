@@ -1,5 +1,4 @@
 using ArtiX.Domain.Common;
-using ArtiX.Domain.Entities.Core;
 
 namespace ArtiX.Domain.Entities.Identity;
 
