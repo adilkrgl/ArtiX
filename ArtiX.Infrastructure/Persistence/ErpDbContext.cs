@@ -1,4 +1,11 @@
 using ArtiX.Domain.Entities.Core;
+using ArtiX.Domain.Entities.Crm;
+using ArtiX.Domain.Entities.Customers;
+using ArtiX.Domain.Entities.Finance;
+using ArtiX.Domain.Entities.Identity;
+using ArtiX.Domain.Entities.Integrations;
+using ArtiX.Domain.Entities.Inventory;
+using ArtiX.Domain.Entities.Products;
 using ArtiX.Domain.Entities.Sales;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,13 +27,41 @@ public class ErpDbContext : DbContext
 
     public DbSet<SalesRepresentative> SalesRepresentatives => Set<SalesRepresentative>();
 
+    public DbSet<User> Users => Set<User>();
+
+    public DbSet<Role> Roles => Set<Role>();
+
+    public DbSet<UserRole> UserRoles => Set<UserRole>();
+
+    public DbSet<UserCompany> UserCompanies => Set<UserCompany>();
+
+    public DbSet<UserBranch> UserBranches => Set<UserBranch>();
+
     public DbSet<Customer> Customers => Set<Customer>();
+
+    public DbSet<CustomerContact> CustomerContacts => Set<CustomerContact>();
+
+    public DbSet<ProductType> ProductTypes => Set<ProductType>();
+
+    public DbSet<AttributeDefinition> AttributeDefinitions => Set<AttributeDefinition>();
+
+    public DbSet<AttributeValue> AttributeValues => Set<AttributeValue>();
+
+    public DbSet<ProductAttributeValue> ProductAttributeValues => Set<ProductAttributeValue>();
 
     public DbSet<Product> Products => Set<Product>();
 
     public DbSet<Warehouse> Warehouses => Set<Warehouse>();
 
+    public DbSet<InventoryItem> InventoryItems => Set<InventoryItem>();
+
+    public DbSet<InventoryAttributeValue> InventoryAttributeValues => Set<InventoryAttributeValue>();
+
+    public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+
     public DbSet<Account> Accounts => Set<Account>();
+
+    public DbSet<LedgerEntry> LedgerEntries => Set<LedgerEntry>();
 
     public DbSet<SalesOrder> SalesOrders => Set<SalesOrder>();
 
@@ -34,11 +69,27 @@ public class ErpDbContext : DbContext
 
     public DbSet<Quotation> Quotations => Set<Quotation>();
 
+    public DbSet<QuotationLine> QuotationLines => Set<QuotationLine>();
+
     public DbSet<Invoice> Invoices => Set<Invoice>();
+
+    public DbSet<InvoiceLine> InvoiceLines => Set<InvoiceLine>();
 
     public DbSet<DeliveryNote> DeliveryNotes => Set<DeliveryNote>();
 
+    public DbSet<DeliveryNoteLine> DeliveryNoteLines => Set<DeliveryNoteLine>();
+
     public DbSet<Payment> Payments => Set<Payment>();
+
+    public DbSet<Activity> Activities => Set<Activity>();
+
+    public DbSet<TaskItem> TaskItems => Set<TaskItem>();
+
+    public DbSet<Note> Notes => Set<Note>();
+
+    public DbSet<IntegrationLog> IntegrationLogs => Set<IntegrationLog>();
+
+    public DbSet<WebhookSubscription> WebhookSubscriptions => Set<WebhookSubscription>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
