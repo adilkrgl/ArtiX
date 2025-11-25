@@ -1,3 +1,5 @@
+using System.Linq;
+using ArtiX.Application.Auth;
 using ArtiX.Domain.Auth;
 using ArtiX.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -36,7 +38,9 @@ public class AuthService : IAuthService
         var user = await _context.Users
             .Include(u => u.UserRoles)
                 .ThenInclude(ur => ur.Role)
-            .FirstOrDefaultAsync(u => u.UserName.ToLower() == normalized || u.Email.ToLower() == normalized);
+            .FirstOrDefaultAsync(u =>
+                u.UserName.ToLower() == normalized ||
+                (u.Email != null && u.Email.ToLower() == normalized));
 
         if (user is null || !user.IsActive)
         {

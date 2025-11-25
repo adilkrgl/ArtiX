@@ -1,6 +1,7 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Linq;
 using ArtiX.Domain.Auth;
 using ArtiX.Domain.Entities.Core;
 using Microsoft.Extensions.Options;

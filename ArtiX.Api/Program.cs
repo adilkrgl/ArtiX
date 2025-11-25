@@ -1,4 +1,5 @@
 using System.Text;
+using ArtiX.Application.Auth;
 using ArtiX.Domain.Auth;
 using ArtiX.Infrastructure.Auth;
 using ArtiX.Infrastructure.Persistence;
