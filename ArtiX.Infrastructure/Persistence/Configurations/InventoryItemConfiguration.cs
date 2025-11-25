@@ -8,14 +8,16 @@ public class InventoryItemConfiguration : IEntityTypeConfiguration<InventoryItem
 {
     public void Configure(EntityTypeBuilder<InventoryItem> builder)
     {
+        builder.HasKey(ii => ii.Id);
+
         builder.HasOne(ii => ii.Warehouse)
             .WithMany(w => w.InventoryItems)
             .HasForeignKey(ii => ii.WarehouseId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(ii => ii.Product)
             .WithMany(p => p.InventoryItems)
             .HasForeignKey(ii => ii.ProductId)
-            .OnDelete(DeleteBehavior.NoAction);
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
