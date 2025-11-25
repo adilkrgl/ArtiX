@@ -10,4 +10,6 @@ public class Product : BaseEntity
     public Company Company { get; set; } = null!;
 
     public ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
+
+    public ICollection<StockMovement> StockMovements { get; set; } = new List<StockMovement>();
 }

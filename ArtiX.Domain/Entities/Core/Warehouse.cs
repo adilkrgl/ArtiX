@@ -14,4 +14,6 @@ public class Warehouse : BaseEntity
     public Branch? Branch { get; set; }
 
     public ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
+
+    public ICollection<StockMovement> StockMovements { get; set; } = new List<StockMovement>();
 }
