@@ -11,7 +11,7 @@ public class DeliveryNoteLineConfiguration : IEntityTypeConfiguration<DeliveryNo
         builder.HasKey(x => x.Id);
 
         builder.HasOne(x => x.DeliveryNote)
-            .WithMany()
+            .WithMany(x => x.Lines)
             .HasForeignKey(x => x.DeliveryNoteId)
             .OnDelete(DeleteBehavior.Cascade);
 

@@ -20,4 +20,6 @@ public class DeliveryNote : BaseEntity
     public Guid? SalesRepresentativeId { get; set; }
 
     public SalesRepresentative? SalesRepresentative { get; set; }
+
+    public ICollection<DeliveryNoteLine> Lines { get; set; } = new List<DeliveryNoteLine>();
 }
