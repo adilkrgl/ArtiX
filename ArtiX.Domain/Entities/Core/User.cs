@@ -19,5 +19,5 @@ public class User : BaseEntity
 
     public string LastName { get; set; } = string.Empty;
 
-    public ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }

@@ -1,5 +1,4 @@
 using System.Linq;
-using ArtiX.Application.Auth;
 using ArtiX.Domain.Auth;
 using ArtiX.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
