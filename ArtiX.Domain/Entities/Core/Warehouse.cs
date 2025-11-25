@@ -1,4 +1,6 @@
 using ArtiX.Domain.Common;
+using ArtiX.Domain.Entities.Inventory;
+
 namespace ArtiX.Domain.Entities.Core;
 
 public class Warehouse : BaseEntity
@@ -10,4 +12,8 @@ public class Warehouse : BaseEntity
     public Guid? BranchId { get; set; }
 
     public Branch? Branch { get; set; }
+
+    public ICollection<InventoryItem> InventoryItems { get; set; } = new List<InventoryItem>();
+
+    public ICollection<StockMovement> StockMovements { get; set; } = new List<StockMovement>();
 }
