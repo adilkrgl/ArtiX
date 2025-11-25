@@ -12,21 +12,26 @@ app.MapGet("/", () => "Hello, ArtiX!");
 
 using (var scope = app.Services.CreateScope())
 {
+    var services = scope.ServiceProvider;
     try
     {
-        var db = scope.ServiceProvider.GetRequiredService<ErpDbContext>();
-        if (db.Database.CanConnect())
-        {
-            Console.WriteLine("✅ ErpDbContext can connect to the database.");
-        }
-        else
-        {
-            Console.WriteLine("❌ ErpDbContext cannot connect to the database.");
-        }
+        var db = services.GetRequiredService<ErpDbContext>();
+        var connection = db.Database.GetDbConnection();
+
+        Console.WriteLine("=== ArtiX DB Startup Check ===");
+        Console.WriteLine($"Provider: {connection.GetType().FullName}");
+        Console.WriteLine($"Connection string: {connection.ConnectionString}");
+
+        Console.WriteLine("Applying migrations...");
+        db.Database.Migrate();
+
+        var canConnect = db.Database.CanConnect();
+        Console.WriteLine($"CanConnect: {canConnect}");
+        Console.WriteLine("=== ArtiX DB Startup Check END ===");
     }
     catch (Exception ex)
     {
-        Console.WriteLine("❌ Error while testing database connection:");
+        Console.WriteLine("❌ Error during database startup check:");
         Console.WriteLine(ex.ToString());
     }
 }
