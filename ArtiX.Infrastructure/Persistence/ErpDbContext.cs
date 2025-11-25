@@ -8,6 +8,7 @@ using ArtiX.Domain.Entities.Inventory;
 using ArtiX.Domain.Entities.Products;
 using ArtiX.Domain.Entities.Sales;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace ArtiX.Infrastructure.Persistence;
 
@@ -120,6 +121,13 @@ public class ErpDbContext : DbContext
                 .HasForeignKey(ii => ii.WarehouseId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
+
+        foreach (var foreignKey in modelBuilder.Model.GetEntityTypes()
+                     .SelectMany(entityType => entityType.GetForeignKeys())
+                     .Where(foreignKey => foreignKey.PrincipalEntityType.ClrType == typeof(Warehouse)))
+        {
+            foreignKey.DeleteBehavior = DeleteBehavior.NoAction;
+        }
 
         base.OnModelCreating(modelBuilder);
     }

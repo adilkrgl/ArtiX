@@ -1,1 +1,1 @@
-// Migrations directory intentionally empty. Regenerate with 'dotnet ef migrations add InitialCreate --project ArtiX.Infrastructure --startup-project ArtiX.Api'.
+# Placeholder to retain the migrations folder when no migrations are checked in; regenerate with `dotnet ef migrations add InitialCreate`.
