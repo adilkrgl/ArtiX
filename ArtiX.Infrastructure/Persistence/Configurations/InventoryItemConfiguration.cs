@@ -11,12 +11,12 @@ public class InventoryItemConfiguration : IEntityTypeConfiguration<InventoryItem
         builder.HasKey(ii => ii.Id);
 
         builder.HasOne(ii => ii.Warehouse)
-            .WithMany(w => w.InventoryItems)
+            .WithMany()
             .HasForeignKey(ii => ii.WarehouseId)
             .OnDelete(DeleteBehavior.NoAction);
 
         builder.HasOne(ii => ii.Product)
-            .WithMany(p => p.InventoryItems)
+            .WithMany()
             .HasForeignKey(ii => ii.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
     }

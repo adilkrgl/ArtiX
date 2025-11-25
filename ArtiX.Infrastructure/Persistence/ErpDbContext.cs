@@ -99,12 +99,12 @@ public class ErpDbContext : DbContext
         modelBuilder.Entity<StockMovement>(builder =>
         {
             builder.HasOne(sm => sm.Product)
-                .WithMany(p => p.StockMovements)
+                .WithMany()
                 .HasForeignKey(sm => sm.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(sm => sm.Warehouse)
-                .WithMany(w => w.StockMovements)
+                .WithMany()
                 .HasForeignKey(sm => sm.WarehouseId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
@@ -112,12 +112,12 @@ public class ErpDbContext : DbContext
         modelBuilder.Entity<InventoryItem>(builder =>
         {
             builder.HasOne(ii => ii.Product)
-                .WithMany(p => p.InventoryItems)
+                .WithMany()
                 .HasForeignKey(ii => ii.ProductId)
                 .OnDelete(DeleteBehavior.Cascade);
 
             builder.HasOne(ii => ii.Warehouse)
-                .WithMany(w => w.InventoryItems)
+                .WithMany()
                 .HasForeignKey(ii => ii.WarehouseId)
                 .OnDelete(DeleteBehavior.NoAction);
         });
