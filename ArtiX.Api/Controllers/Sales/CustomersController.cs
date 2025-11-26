@@ -58,20 +58,47 @@ public class CustomersController : ControllerBase
                                      || (EF.Property<string?>(x, "TaxNumber") ?? string.Empty).ToLower().Contains(term));
         }
 
-        var customers = await query.AsNoTracking().ToListAsync();
-        return customers.Select(ToDto).ToList();
+        var customers = await query
+            .AsNoTracking()
+            .Select(x => new CustomerDto
+            {
+                Id = x.Id,
+                CompanyId = x.CompanyId,
+                BranchId = x.BranchId,
+                DefaultSalesRepresentativeId = x.DefaultSalesRepresentativeId,
+                Name = EF.Property<string?>(x, "Name") ?? string.Empty,
+                Code = EF.Property<string?>(x, "Code"),
+                TaxNumber = EF.Property<string?>(x, "TaxNumber"),
+                IsActive = EF.Property<bool?>(x, "IsActive") ?? false
+            })
+            .ToListAsync();
+
+        return customers;
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<CustomerDto>> Get(Guid id)
     {
-        var entity = await _context.Customers.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+        var entity = await _context.Customers.AsNoTracking()
+            .Select(x => new CustomerDto
+            {
+                Id = x.Id,
+                CompanyId = x.CompanyId,
+                BranchId = x.BranchId,
+                DefaultSalesRepresentativeId = x.DefaultSalesRepresentativeId,
+                Name = EF.Property<string?>(x, "Name") ?? string.Empty,
+                Code = EF.Property<string?>(x, "Code"),
+                TaxNumber = EF.Property<string?>(x, "TaxNumber"),
+                IsActive = EF.Property<bool?>(x, "IsActive") ?? false
+            })
+            .FirstOrDefaultAsync(x => x.Id == id);
+
         if (entity == null)
         {
             return NotFound();
         }
 
-        return ToDto(entity);
+        return entity;
     }
 
     [HttpPost]
@@ -110,10 +137,10 @@ public class CustomersController : ControllerBase
             CreatedAt = DateTime.UtcNow
         };
 
-        SetString(entity, "Name", request.Name);
-        SetString(entity, "Code", request.Code);
-        SetString(entity, "TaxNumber", request.TaxNumber);
-        SetBool(entity, "IsActive", request.IsActive);
+        _context.Entry(entity).Property<string?>("Name").CurrentValue = request.Name;
+        _context.Entry(entity).Property<string?>("Code").CurrentValue = request.Code;
+        _context.Entry(entity).Property<string?>("TaxNumber").CurrentValue = request.TaxNumber;
+        _context.Entry(entity).Property<bool?>("IsActive").CurrentValue = request.IsActive;
 
         await _context.Customers.AddAsync(entity);
         await _context.SaveChangesAsync();
@@ -150,10 +177,10 @@ public class CustomersController : ControllerBase
 
         entity.BranchId = request.BranchId;
         entity.DefaultSalesRepresentativeId = request.DefaultSalesRepresentativeId;
-        SetString(entity, "Name", request.Name);
-        SetString(entity, "Code", request.Code);
-        SetString(entity, "TaxNumber", request.TaxNumber);
-        SetBool(entity, "IsActive", request.IsActive);
+        _context.Entry(entity).Property<string?>("Name").CurrentValue = request.Name;
+        _context.Entry(entity).Property<string?>("Code").CurrentValue = request.Code;
+        _context.Entry(entity).Property<string?>("TaxNumber").CurrentValue = request.TaxNumber;
+        _context.Entry(entity).Property<bool?>("IsActive").CurrentValue = request.IsActive;
         entity.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -265,17 +292,22 @@ public class CustomersController : ControllerBase
         return NoContent();
     }
 
-    private static CustomerDto ToDto(Customer entity) => new()
+    private CustomerDto ToDto(Customer entity)
     {
-        Id = entity.Id,
-        CompanyId = entity.CompanyId,
-        BranchId = entity.BranchId,
-        DefaultSalesRepresentativeId = entity.DefaultSalesRepresentativeId,
-        Name = GetString(entity, "Name") ?? string.Empty,
-        Code = GetString(entity, "Code"),
-        TaxNumber = GetString(entity, "TaxNumber"),
-        IsActive = GetBool(entity, "IsActive")
-    };
+        var entry = _context.Entry(entity);
+
+        return new CustomerDto
+        {
+            Id = entity.Id,
+            CompanyId = entity.CompanyId,
+            BranchId = entity.BranchId,
+            DefaultSalesRepresentativeId = entity.DefaultSalesRepresentativeId,
+            Name = entry.Property<string?>("Name").CurrentValue ?? string.Empty,
+            Code = entry.Property<string?>("Code").CurrentValue,
+            TaxNumber = entry.Property<string?>("TaxNumber").CurrentValue,
+            IsActive = entry.Property<bool?>("IsActive").CurrentValue ?? false
+        };
+    }
 
     private static CustomerContactDto ToDto(CustomerContact entity) => new()
     {
@@ -285,39 +317,4 @@ public class CustomersController : ControllerBase
         Email = entity.Email,
         Phone = entity.Phone
     };
-
-    private static string? GetString(Customer entity, string property)
-    {
-        var prop = entity.GetType().GetProperty(property);
-        return prop?.GetValue(entity) as string;
-    }
-
-    private static bool GetBool(Customer entity, string property)
-    {
-        var prop = entity.GetType().GetProperty(property);
-        if (prop?.GetValue(entity) is bool value)
-        {
-            return value;
-        }
-
-        return false;
-    }
-
-    private static void SetString(Customer entity, string property, string? value)
-    {
-        var prop = entity.GetType().GetProperty(property);
-        if (prop?.CanWrite == true)
-        {
-            prop.SetValue(entity, value);
-        }
-    }
-
-    private static void SetBool(Customer entity, string property, bool value)
-    {
-        var prop = entity.GetType().GetProperty(property);
-        if (prop?.CanWrite == true)
-        {
-            prop.SetValue(entity, value);
-        }
-    }
 }
