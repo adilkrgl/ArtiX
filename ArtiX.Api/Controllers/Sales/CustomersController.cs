@@ -47,15 +47,15 @@ public class CustomersController : ControllerBase
 
         if (isActive.HasValue)
         {
-            query = query.Where(x => EF.Property<bool?>(x, "IsActive") == isActive.Value);
+            query = query.Where(x => x.IsActive == isActive.Value);
         }
 
         if (!string.IsNullOrWhiteSpace(search))
         {
             var term = search.ToLower();
-            query = query.Where(x => (EF.Property<string?>(x, "Name") ?? string.Empty).ToLower().Contains(term)
-                                     || (EF.Property<string?>(x, "Code") ?? string.Empty).ToLower().Contains(term)
-                                     || (EF.Property<string?>(x, "TaxNumber") ?? string.Empty).ToLower().Contains(term));
+            query = query.Where(x => x.Name.ToLower().Contains(term)
+                                     || (x.Code ?? string.Empty).ToLower().Contains(term)
+                                     || (x.TaxNumber ?? string.Empty).ToLower().Contains(term));
         }
 
         var customers = await query
@@ -66,10 +66,10 @@ public class CustomersController : ControllerBase
                 CompanyId = x.CompanyId,
                 BranchId = x.BranchId,
                 DefaultSalesRepresentativeId = x.DefaultSalesRepresentativeId,
-                Name = EF.Property<string?>(x, "Name") ?? string.Empty,
-                Code = EF.Property<string?>(x, "Code"),
-                TaxNumber = EF.Property<string?>(x, "TaxNumber"),
-                IsActive = EF.Property<bool?>(x, "IsActive") ?? false
+                Name = x.Name,
+                Code = x.Code,
+                TaxNumber = x.TaxNumber,
+                IsActive = x.IsActive
             })
             .ToListAsync();
 
@@ -134,13 +134,12 @@ public class CustomersController : ControllerBase
             CompanyId = request.CompanyId,
             BranchId = request.BranchId,
             DefaultSalesRepresentativeId = request.DefaultSalesRepresentativeId,
+            Name = request.Name,
+            Code = request.Code,
+            TaxNumber = request.TaxNumber,
+            IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow
         };
-
-        _context.Entry(entity).Property<string?>("Name").CurrentValue = request.Name;
-        _context.Entry(entity).Property<string?>("Code").CurrentValue = request.Code;
-        _context.Entry(entity).Property<string?>("TaxNumber").CurrentValue = request.TaxNumber;
-        _context.Entry(entity).Property<bool?>("IsActive").CurrentValue = request.IsActive;
 
         await _context.Customers.AddAsync(entity);
         await _context.SaveChangesAsync();
@@ -177,10 +176,10 @@ public class CustomersController : ControllerBase
 
         entity.BranchId = request.BranchId;
         entity.DefaultSalesRepresentativeId = request.DefaultSalesRepresentativeId;
-        _context.Entry(entity).Property<string?>("Name").CurrentValue = request.Name;
-        _context.Entry(entity).Property<string?>("Code").CurrentValue = request.Code;
-        _context.Entry(entity).Property<string?>("TaxNumber").CurrentValue = request.TaxNumber;
-        _context.Entry(entity).Property<bool?>("IsActive").CurrentValue = request.IsActive;
+        entity.Name = request.Name;
+        entity.Code = request.Code;
+        entity.TaxNumber = request.TaxNumber;
+        entity.IsActive = request.IsActive;
         entity.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -294,18 +293,16 @@ public class CustomersController : ControllerBase
 
     private CustomerDto ToDto(Customer entity)
     {
-        var entry = _context.Entry(entity);
-
         return new CustomerDto
         {
             Id = entity.Id,
             CompanyId = entity.CompanyId,
             BranchId = entity.BranchId,
             DefaultSalesRepresentativeId = entity.DefaultSalesRepresentativeId,
-            Name = entry.Property<string?>("Name").CurrentValue ?? string.Empty,
-            Code = entry.Property<string?>("Code").CurrentValue,
-            TaxNumber = entry.Property<string?>("TaxNumber").CurrentValue,
-            IsActive = entry.Property<bool?>("IsActive").CurrentValue ?? false
+            Name = entity.Name,
+            Code = entity.Code,
+            TaxNumber = entity.TaxNumber,
+            IsActive = entity.IsActive
         };
     }
 
