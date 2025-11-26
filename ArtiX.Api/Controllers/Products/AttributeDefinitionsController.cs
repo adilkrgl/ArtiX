@@ -58,7 +58,19 @@ public class AttributeDefinitionsController : ControllerBase
         var results = await query
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Name)
-            .Select(ToDto)
+            .Select(x => new AttributeDefinitionDto
+            {
+                Id = x.Id,
+                CompanyId = x.CompanyId,
+                BranchId = x.BranchId,
+                Name = x.Name,
+                DisplayName = x.DisplayName,
+                DataType = (int)x.DataType,
+                IsVariant = x.IsVariant,
+                IsFilterable = x.IsFilterable,
+                IsRequired = x.IsRequired,
+                SortOrder = x.SortOrder
+            })
             .ToListAsync();
 
         return Ok(results);

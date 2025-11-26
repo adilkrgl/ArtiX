@@ -32,7 +32,17 @@ public class ProductAttributesController : ControllerBase
             .Include(pav => pav.AttributeValue)
             .ThenInclude(av => av.AttributeDefinition)
             .Where(pav => pav.ProductId == productId)
-            .Select(ToDto)
+            .Select(pav => new ProductAttributeValueDto
+            {
+                Id = pav.Id,
+                ProductId = pav.ProductId,
+                AttributeDefinitionId = pav.AttributeValue.AttributeDefinitionId,
+                AttributeValueId = pav.AttributeValueId,
+                AttributeName = pav.AttributeValue.AttributeDefinition.Name,
+                AttributeDisplayName = pav.AttributeValue.AttributeDefinition.DisplayName ?? pav.AttributeValue.AttributeDefinition.Name,
+                AttributeValue = pav.AttributeValue.Value,
+                CustomValue = pav.CustomValue
+            })
             .ToListAsync();
 
         return Ok(items);
@@ -127,21 +137,20 @@ public class ProductAttributesController : ControllerBase
             .Include(pav => pav.AttributeValue)
             .ThenInclude(av => av.AttributeDefinition)
             .Where(pav => pav.ProductId == productId)
-            .Select(ToDto)
+            .Select(pav => new ProductAttributeValueDto
+            {
+                Id = pav.Id,
+                ProductId = pav.ProductId,
+                AttributeDefinitionId = pav.AttributeValue.AttributeDefinitionId,
+                AttributeValueId = pav.AttributeValueId,
+                AttributeName = pav.AttributeValue.AttributeDefinition.Name,
+                AttributeDisplayName = pav.AttributeValue.AttributeDefinition.DisplayName ?? pav.AttributeValue.AttributeDefinition.Name,
+                AttributeValue = pav.AttributeValue.Value,
+                CustomValue = pav.CustomValue
+            })
             .ToListAsync();
 
         return Ok(result);
     }
 
-    private static ProductAttributeValueDto ToDto(ProductAttributeValue pav) => new()
-    {
-        Id = pav.Id,
-        ProductId = pav.ProductId,
-        AttributeDefinitionId = pav.AttributeValue.AttributeDefinitionId,
-        AttributeValueId = pav.AttributeValueId,
-        AttributeName = pav.AttributeValue.AttributeDefinition.Name,
-        AttributeDisplayName = pav.AttributeValue.AttributeDefinition.DisplayName ?? pav.AttributeValue.AttributeDefinition.Name,
-        AttributeValue = pav.AttributeValue.Value,
-        CustomValue = pav.CustomValue
-    };
 }
