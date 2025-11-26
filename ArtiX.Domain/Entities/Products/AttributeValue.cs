@@ -9,4 +9,6 @@ public class AttributeValue : BaseEntity
     public AttributeDefinition AttributeDefinition { get; set; } = null!;
 
     public string Value { get; set; } = string.Empty;
+
+    public int SortOrder { get; set; } = 0;
 }
