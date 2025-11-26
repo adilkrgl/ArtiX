@@ -32,7 +32,13 @@ public class AttributeValuesController : ControllerBase
             .Where(x => x.AttributeDefinitionId == attributeDefinitionId)
             .OrderBy(x => x.SortOrder)
             .ThenBy(x => x.Value)
-            .Select(ToDto)
+            .Select(x => new AttributeValueDto
+            {
+                Id = x.Id,
+                AttributeDefinitionId = x.AttributeDefinitionId,
+                Value = x.Value,
+                SortOrder = x.SortOrder
+            })
             .ToListAsync();
 
         return Ok(values);
