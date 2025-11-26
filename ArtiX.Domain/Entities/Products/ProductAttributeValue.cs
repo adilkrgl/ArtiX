@@ -12,4 +12,6 @@ public class ProductAttributeValue : BaseEntity
     public Guid AttributeValueId { get; set; }
 
     public AttributeValue AttributeValue { get; set; } = null!;
+
+    public string? CustomValue { get; set; }
 }

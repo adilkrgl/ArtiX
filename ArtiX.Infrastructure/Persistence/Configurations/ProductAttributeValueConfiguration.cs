@@ -10,6 +10,9 @@ public class ProductAttributeValueConfiguration : IEntityTypeConfiguration<Produ
     {
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.CustomValue)
+            .IsRequired(false);
+
         builder.HasOne(x => x.Product)
             .WithMany()
             .HasForeignKey(x => x.ProductId)
