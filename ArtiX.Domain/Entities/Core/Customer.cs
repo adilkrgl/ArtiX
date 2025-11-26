@@ -15,4 +15,12 @@ public class Customer : BaseEntity
     public Guid? DefaultSalesRepresentativeId { get; set; }
 
     public SalesRepresentative? DefaultSalesRepresentative { get; set; }
+
+    public string Name { get; set; } = string.Empty;
+
+    public string? Code { get; set; }
+
+    public string? TaxNumber { get; set; }
+
+    public bool IsActive { get; set; }
 }
