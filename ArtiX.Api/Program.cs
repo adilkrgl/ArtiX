@@ -1,4 +1,5 @@
 using System.Text;
+using ArtiX.Api.Auth;
 using ArtiX.Domain.Auth;
 using ArtiX.Infrastructure.Auth;
 using ArtiX.Infrastructure.Persistence;
@@ -15,9 +16,11 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
+builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? throw new InvalidOperationException("Jwt configuration is missing.");
 var key = Encoding.UTF8.GetBytes(jwtOptions.Key);

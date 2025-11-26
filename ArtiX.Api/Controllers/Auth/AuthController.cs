@@ -1,5 +1,3 @@
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Linq;
 using ArtiX.Api.Dtos.Auth;
 using ArtiX.Domain.Auth;
@@ -13,10 +11,12 @@ namespace ArtiX.Api.Controllers.Auth;
 public class AuthController : ControllerBase
 {
     private readonly IAuthService _authService;
+    private readonly ICurrentUserContext _currentUser;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IAuthService authService, ICurrentUserContext currentUser)
     {
         _authService = authService;
+        _currentUser = currentUser;
     }
 
     [HttpPost("login")]
@@ -86,31 +86,19 @@ public class AuthController : ControllerBase
     [Authorize]
     public ActionResult<AuthUserDto> Me()
     {
-        var principal = HttpContext.User;
-
-        var idClaim = principal.FindFirst(ClaimTypes.NameIdentifier) ?? principal.FindFirst(JwtRegisteredClaimNames.Sub);
-        _ = Guid.TryParse(idClaim?.Value, out var userId);
-
-        var userName = principal.Identity?.Name
-                        ?? principal.FindFirst(JwtRegisteredClaimNames.UniqueName)?.Value
-                        ?? string.Empty;
-
-        var email = principal.FindFirst(JwtRegisteredClaimNames.Email)?.Value;
-        var firstName = principal.FindFirst(ClaimTypes.GivenName)?.Value;
-        var lastName = principal.FindFirst(ClaimTypes.Surname)?.Value;
-
-        var roles = principal.FindAll(ClaimTypes.Role)
-            .Select(r => r.Value)
-            .ToList();
+        if (!_currentUser.IsAuthenticated || _currentUser.UserId == null)
+        {
+            return Unauthorized();
+        }
 
         var dto = new AuthUserDto
         {
-            Id = userId,
-            UserName = userName,
-            Email = email,
-            FirstName = firstName,
-            LastName = lastName,
-            Roles = roles
+            Id = _currentUser.UserId.Value,
+            UserName = _currentUser.UserName ?? string.Empty,
+            Email = _currentUser.Email,
+            FirstName = _currentUser.FirstName,
+            LastName = _currentUser.LastName,
+            Roles = _currentUser.Roles.ToList()
         };
 
         return Ok(dto);
