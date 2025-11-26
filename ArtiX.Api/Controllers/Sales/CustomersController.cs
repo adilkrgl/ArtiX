@@ -1,7 +1,7 @@
 using ArtiX.Api.Dtos.Sales;
 using ArtiX.Domain.Entities.Core;
 using ArtiX.Domain.Entities.Customers;
-using ArtiX.Infrastructure.Persistence.Context;
+using ArtiX.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
