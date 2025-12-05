@@ -1,7 +1,7 @@
 using System.Data;
 using System.Linq;
+using System.Collections.Generic;
 using ArtiX.Api.Dtos.Sales;
-using ArtiX.Application.Invoices;
 using ArtiX.Domain.Entities.Core;
 using ArtiX.Domain.Entities.Sales;
 using ArtiX.Infrastructure.Persistence;
@@ -17,12 +17,10 @@ namespace ArtiX.Api.Controllers.Sales;
 public class InvoicesController : ControllerBase
 {
     private readonly ErpDbContext _db;
-    private readonly IInvoiceNumberGenerator _invoiceNumberGenerator;
-
-    public InvoicesController(ErpDbContext db, IInvoiceNumberGenerator invoiceNumberGenerator)
+    
+    public InvoicesController(ErpDbContext db)
     {
         _db = db;
-        _invoiceNumberGenerator = invoiceNumberGenerator;
     }
 
     [HttpGet]
@@ -78,9 +76,26 @@ public class InvoicesController : ControllerBase
 
         await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, HttpContext.RequestAborted);
 
-        var invoiceNumber = string.IsNullOrWhiteSpace(request.InvoiceNumber)
-            ? await _invoiceNumberGenerator.GenerateNextAsync(request.InvoiceDate, HttpContext.RequestAborted)
-            : request.InvoiceNumber!.Trim();
+        var yearPrefix = DateTime.UtcNow.Year.ToString();
+        var maxForYear = await _db.Invoices
+            .Where(i => i.InvoiceNumber.StartsWith(yearPrefix))
+            .OrderByDescending(i => i.InvoiceNumber)
+            .Select(i => i.InvoiceNumber)
+            .FirstOrDefaultAsync(HttpContext.RequestAborted);
+
+        var nextSequence = 1;
+        if (!string.IsNullOrWhiteSpace(maxForYear) && maxForYear.Length > 4)
+        {
+            var numericPart = maxForYear.Substring(4);
+            if (int.TryParse(numericPart, out var parsed))
+            {
+                nextSequence = parsed + 1;
+            }
+        }
+
+        var invoiceNumber = $"{yearPrefix}{nextSequence:D5}";
+
+        var lineRequests = request.Lines ?? new List<CreateInvoiceLineItem>();
 
         var entity = new Invoice
         {
@@ -95,13 +110,29 @@ public class InvoicesController : ControllerBase
             CreatedAt = DateTime.UtcNow
         };
 
+        foreach (var line in lineRequests)
+        {
+            if (line.ProductId == null && string.IsNullOrWhiteSpace(line.CustomDescription))
+            {
+                return BadRequest(new { message = "Custom lines must include a description when ProductId is not provided." });
+            }
+
+            entity.Lines.Add(new InvoiceLine
+            {
+                Id = Guid.NewGuid(),
+                InvoiceId = entity.Id,
+                ProductId = line.ProductId,
+                Quantity = line.Quantity,
+                UnitPrice = line.UnitPrice,
+                CustomDescription = line.CustomDescription,
+                LineNote = line.LineNote
+            });
+        }
+
         _db.Invoices.Add(entity);
         await _db.SaveChangesAsync();
 
         await transaction.CommitAsync(HttpContext.RequestAborted);
-
-        // reload with lines (none yet) for consistent response
-        entity.Lines = new List<InvoiceLine>();
 
         return CreatedAtAction(nameof(GetById), new { id = entity.Id }, ToDto(entity));
     }
@@ -128,10 +159,6 @@ public class InvoicesController : ControllerBase
         invoice.CustomerId = request.CustomerId;
         invoice.SalesChannelId = request.SalesChannelId;
         invoice.SalesRepresentativeId = request.SalesRepresentativeId;
-        if (!string.IsNullOrWhiteSpace(request.InvoiceNumber))
-        {
-            invoice.InvoiceNumber = request.InvoiceNumber.Trim();
-        }
         invoice.InvoiceDate = request.InvoiceDate;
         invoice.UpdatedAt = DateTime.UtcNow;
 

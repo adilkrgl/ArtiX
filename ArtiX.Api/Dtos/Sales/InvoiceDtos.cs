@@ -25,7 +25,7 @@ public class CreateInvoiceRequest
     public Guid? SalesChannelId { get; set; }
     public Guid? SalesRepresentativeId { get; set; }
     public DateTime InvoiceDate { get; set; }
-    public string? InvoiceNumber { get; set; }
+    public List<CreateInvoiceLineItem> Lines { get; set; } = new();
 }
 
 public class UpdateInvoiceRequest
@@ -35,5 +35,13 @@ public class UpdateInvoiceRequest
     public Guid? SalesChannelId { get; set; }
     public Guid? SalesRepresentativeId { get; set; }
     public DateTime InvoiceDate { get; set; }
-    public string? InvoiceNumber { get; set; }
+}
+
+public class CreateInvoiceLineItem
+{
+    public Guid? ProductId { get; set; }
+    public int Quantity { get; set; }
+    public decimal UnitPrice { get; set; }
+    public string? CustomDescription { get; set; }
+    public string? LineNote { get; set; }
 }
