@@ -9,9 +9,13 @@ public class QuotationLine : BaseEntity
 
     public Quotation Quotation { get; set; } = null!;
 
-    public Guid ProductId { get; set; }
+    public Guid? ProductId { get; set; }
 
-    public Product Product { get; set; } = null!;
+    public Product? Product { get; set; }
+
+    public string? CustomDescription { get; set; }
+
+    public string? LineNote { get; set; }
 
     public int Quantity { get; set; }
 
