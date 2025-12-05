@@ -95,7 +95,7 @@ public class InvoiceLinesController : ControllerBase
         _db.InvoiceLines.Add(line);
         await _db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = line.Id }, ToDto(line));
+        return Ok(ToDto(line));
     }
 
     [HttpPut("{id:guid}")]
