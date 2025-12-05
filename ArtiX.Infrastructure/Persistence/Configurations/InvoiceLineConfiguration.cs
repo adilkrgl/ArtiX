@@ -11,7 +11,7 @@ public class InvoiceLineConfiguration : IEntityTypeConfiguration<InvoiceLine>
         builder.HasKey(x => x.Id);
 
         builder.HasOne(x => x.Invoice)
-            .WithMany()
+            .WithMany(x => x.Lines)
             .HasForeignKey(x => x.InvoiceId)
             .OnDelete(DeleteBehavior.Cascade);
 

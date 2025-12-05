@@ -11,7 +11,7 @@ public class SalesOrderLineConfiguration : IEntityTypeConfiguration<SalesOrderLi
         builder.HasKey(x => x.Id);
 
         builder.HasOne(x => x.SalesOrder)
-            .WithMany()
+            .WithMany(x => x.Lines)
             .HasForeignKey(x => x.SalesOrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
