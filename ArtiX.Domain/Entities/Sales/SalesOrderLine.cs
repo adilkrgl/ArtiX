@@ -9,9 +9,13 @@ public class SalesOrderLine : BaseEntity
 
     public SalesOrder SalesOrder { get; set; } = null!;
 
-    public Guid ProductId { get; set; }
+    public Guid? ProductId { get; set; }
 
-    public Product Product { get; set; } = null!;
+    public Product? Product { get; set; }
+
+    public string? CustomDescription { get; set; }
+
+    public string? LineNote { get; set; }
 
     public int Quantity { get; set; }
 

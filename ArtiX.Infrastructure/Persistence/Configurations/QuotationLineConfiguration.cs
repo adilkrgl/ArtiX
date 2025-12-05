@@ -20,6 +20,17 @@ public class QuotationLineConfiguration : IEntityTypeConfiguration<QuotationLine
             .HasForeignKey(x => x.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
 
+        builder.Property(x => x.ProductId)
+            .IsRequired(false);
+
+        builder.Property(x => x.CustomDescription)
+            .HasColumnType("nvarchar(max)")
+            .IsRequired(false);
+
+        builder.Property(x => x.LineNote)
+            .HasColumnType("nvarchar(max)")
+            .IsRequired(false);
+
         builder.Property(x => x.UnitPrice)
             .HasPrecision(18, 2);
     }
