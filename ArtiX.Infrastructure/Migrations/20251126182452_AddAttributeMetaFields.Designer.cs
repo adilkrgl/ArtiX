@@ -4,6 +4,7 @@ using ArtiX.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ArtiX.Infrastructure.Migrations
 {
     [DbContext(typeof(ErpDbContext))]
-    partial class ErpDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251126182452_AddAttributeMetaFields")]
+    partial class AddAttributeMetaFields
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1214,17 +1217,6 @@ namespace ArtiX.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("CustomerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("InvoiceDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("InvoiceNumber")
-                        .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
-
                     b.Property<Guid?>("SalesChannelId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1242,11 +1234,6 @@ namespace ArtiX.Infrastructure.Migrations
                     b.HasIndex("BranchId");
 
                     b.HasIndex("CompanyId");
-
-                    b.HasIndex("CustomerId");
-
-                    b.HasIndex("InvoiceNumber")
-                        .IsUnique();
 
                     b.HasIndex("SalesChannelId");
 
@@ -1270,16 +1257,10 @@ namespace ArtiX.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CustomDescription")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<Guid>("InvoiceId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("LineNote")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("ProductId")
+                    b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Quantity")
@@ -1399,13 +1380,7 @@ namespace ArtiX.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CustomDescription")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LineNote")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("ProductId")
+                    b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Quantity")
@@ -1448,20 +1423,11 @@ namespace ArtiX.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("CustomerId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("OrderDate")
-                        .HasColumnType("datetime2");
-
                     b.Property<Guid?>("SalesChannelId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid?>("SalesRepresentativeId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<Guid?>("TenantId")
                         .HasColumnType("uniqueidentifier");
@@ -1474,8 +1440,6 @@ namespace ArtiX.Infrastructure.Migrations
                     b.HasIndex("BranchId");
 
                     b.HasIndex("CompanyId");
-
-                    b.HasIndex("CustomerId");
 
                     b.HasIndex("SalesChannelId");
 
@@ -1499,13 +1463,7 @@ namespace ArtiX.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("CustomDescription")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("LineNote")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("ProductId")
+                    b.Property<Guid>("ProductId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<int>("Quantity")
@@ -1901,10 +1859,6 @@ namespace ArtiX.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ArtiX.Domain.Entities.Core.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId");
-
                     b.HasOne("ArtiX.Domain.Entities.Core.SalesChannel", "SalesChannel")
                         .WithMany()
                         .HasForeignKey("SalesChannelId");
@@ -1917,8 +1871,6 @@ namespace ArtiX.Infrastructure.Migrations
 
                     b.Navigation("Company");
 
-                    b.Navigation("Customer");
-
                     b.Navigation("SalesChannel");
 
                     b.Navigation("SalesRepresentative");
@@ -1927,7 +1879,7 @@ namespace ArtiX.Infrastructure.Migrations
             modelBuilder.Entity("ArtiX.Domain.Entities.Sales.InvoiceLine", b =>
                 {
                     b.HasOne("ArtiX.Domain.Entities.Sales.Invoice", "Invoice")
-                        .WithMany("Lines")
+                        .WithMany()
                         .HasForeignKey("InvoiceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1935,7 +1887,8 @@ namespace ArtiX.Infrastructure.Migrations
                     b.HasOne("ArtiX.Domain.Entities.Core.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.Navigation("Invoice");
 
@@ -2005,7 +1958,8 @@ namespace ArtiX.Infrastructure.Migrations
                     b.HasOne("ArtiX.Domain.Entities.Core.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("ArtiX.Domain.Entities.Sales.Quotation", "Quotation")
                         .WithMany()
@@ -2030,10 +1984,6 @@ namespace ArtiX.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ArtiX.Domain.Entities.Core.Customer", "Customer")
-                        .WithMany()
-                        .HasForeignKey("CustomerId");
-
                     b.HasOne("ArtiX.Domain.Entities.Core.SalesChannel", "SalesChannel")
                         .WithMany()
                         .HasForeignKey("SalesChannelId");
@@ -2046,8 +1996,6 @@ namespace ArtiX.Infrastructure.Migrations
 
                     b.Navigation("Company");
 
-                    b.Navigation("Customer");
-
                     b.Navigation("SalesChannel");
 
                     b.Navigation("SalesRepresentative");
@@ -2058,10 +2006,11 @@ namespace ArtiX.Infrastructure.Migrations
                     b.HasOne("ArtiX.Domain.Entities.Core.Product", "Product")
                         .WithMany()
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("ArtiX.Domain.Entities.Sales.SalesOrder", "SalesOrder")
-                        .WithMany("Lines")
+                        .WithMany()
                         .HasForeignKey("SalesOrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -2110,16 +2059,6 @@ namespace ArtiX.Infrastructure.Migrations
                 });
 
             modelBuilder.Entity("ArtiX.Domain.Entities.Sales.DeliveryNote", b =>
-                {
-                    b.Navigation("Lines");
-                });
-
-            modelBuilder.Entity("ArtiX.Domain.Entities.Sales.Invoice", b =>
-                {
-                    b.Navigation("Lines");
-                });
-
-            modelBuilder.Entity("ArtiX.Domain.Entities.Sales.SalesOrder", b =>
                 {
                     b.Navigation("Lines");
                 });
