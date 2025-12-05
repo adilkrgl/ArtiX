@@ -52,7 +52,7 @@ public class InvoicesController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<InvoiceDto>> GetByIdAsync(Guid id)
+    public async Task<ActionResult<InvoiceDto>> GetById(Guid id)
     {
         var invoice = await _db.Invoices
             .Include(x => x.Lines)
@@ -103,7 +103,7 @@ public class InvoicesController : ControllerBase
         // reload with lines (none yet) for consistent response
         entity.Lines = new List<InvoiceLine>();
 
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = entity.Id }, ToDto(entity));
+        return CreatedAtAction(nameof(GetById), new { id = entity.Id }, ToDto(entity));
     }
 
     [HttpPut("{id:guid}")]
