@@ -11,6 +11,7 @@ public class InvoiceDto
     public Guid? CustomerId { get; set; }
     public Guid? SalesChannelId { get; set; }
     public Guid? SalesRepresentativeId { get; set; }
+    public string InvoiceNumber { get; set; } = string.Empty;
     public DateTime InvoiceDate { get; set; }
     public decimal? TotalAmount { get; set; }
     public List<InvoiceLineDto> Lines { get; set; } = new();
@@ -24,6 +25,7 @@ public class CreateInvoiceRequest
     public Guid? SalesChannelId { get; set; }
     public Guid? SalesRepresentativeId { get; set; }
     public DateTime InvoiceDate { get; set; }
+    public string? InvoiceNumber { get; set; }
 }
 
 public class UpdateInvoiceRequest
@@ -33,4 +35,5 @@ public class UpdateInvoiceRequest
     public Guid? SalesChannelId { get; set; }
     public Guid? SalesRepresentativeId { get; set; }
     public DateTime InvoiceDate { get; set; }
+    public string? InvoiceNumber { get; set; }
 }
