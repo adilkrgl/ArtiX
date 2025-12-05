@@ -10,6 +10,8 @@ public class Invoice : BaseEntity
 
     public Company Company { get; set; } = null!;
 
+    public string InvoiceNumber { get; set; } = string.Empty;
+
     public Guid? BranchId { get; set; }
 
     public Branch? Branch { get; set; }

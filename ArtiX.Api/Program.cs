@@ -1,7 +1,9 @@
 using System.Text;
 using ArtiX.Api.Auth;
 using ArtiX.Domain.Auth;
+using ArtiX.Application.Invoices;
 using ArtiX.Infrastructure.Auth;
+using ArtiX.Infrastructure.Invoices;
 using ArtiX.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -53,6 +55,7 @@ builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
+builder.Services.AddScoped<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? throw new InvalidOperationException("Jwt configuration is missing.");
 var key = Encoding.UTF8.GetBytes(jwtOptions.Key);

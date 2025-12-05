@@ -1,4 +1,7 @@
+using System.Data;
+using System.Linq;
 using ArtiX.Api.Dtos.Sales;
+using ArtiX.Application.Invoices;
 using ArtiX.Domain.Entities.Core;
 using ArtiX.Domain.Entities.Sales;
 using ArtiX.Infrastructure.Persistence;
@@ -14,10 +17,12 @@ namespace ArtiX.Api.Controllers.Sales;
 public class InvoicesController : ControllerBase
 {
     private readonly ErpDbContext _db;
+    private readonly IInvoiceNumberGenerator _invoiceNumberGenerator;
 
-    public InvoicesController(ErpDbContext db)
+    public InvoicesController(ErpDbContext db, IInvoiceNumberGenerator invoiceNumberGenerator)
     {
         _db = db;
+        _invoiceNumberGenerator = invoiceNumberGenerator;
     }
 
     [HttpGet]
@@ -71,6 +76,12 @@ public class InvoicesController : ControllerBase
             return error;
         }
 
+        await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, HttpContext.RequestAborted);
+
+        var invoiceNumber = string.IsNullOrWhiteSpace(request.InvoiceNumber)
+            ? await _invoiceNumberGenerator.GenerateNextAsync(request.InvoiceDate, HttpContext.RequestAborted)
+            : request.InvoiceNumber!.Trim();
+
         var entity = new Invoice
         {
             Id = Guid.NewGuid(),
@@ -79,12 +90,15 @@ public class InvoicesController : ControllerBase
             CustomerId = request.CustomerId,
             SalesChannelId = request.SalesChannelId,
             SalesRepresentativeId = request.SalesRepresentativeId,
+            InvoiceNumber = invoiceNumber,
             InvoiceDate = request.InvoiceDate,
             CreatedAt = DateTime.UtcNow
         };
 
         _db.Invoices.Add(entity);
         await _db.SaveChangesAsync();
+
+        await transaction.CommitAsync(HttpContext.RequestAborted);
 
         // reload with lines (none yet) for consistent response
         entity.Lines = new List<InvoiceLine>();
@@ -114,6 +128,10 @@ public class InvoicesController : ControllerBase
         invoice.CustomerId = request.CustomerId;
         invoice.SalesChannelId = request.SalesChannelId;
         invoice.SalesRepresentativeId = request.SalesRepresentativeId;
+        if (!string.IsNullOrWhiteSpace(request.InvoiceNumber))
+        {
+            invoice.InvoiceNumber = request.InvoiceNumber.Trim();
+        }
         invoice.InvoiceDate = request.InvoiceDate;
         invoice.UpdatedAt = DateTime.UtcNow;
 
@@ -194,7 +212,8 @@ public class InvoicesController : ControllerBase
 
     private static InvoiceDto ToDto(Invoice invoice)
     {
-        var total = invoice.Lines?.Sum(x => x.Quantity * x.UnitPrice);
+        var lines = invoice.Lines ?? Enumerable.Empty<InvoiceLine>();
+        var total = lines.Sum(x => x.Quantity * x.UnitPrice);
 
         return new InvoiceDto
         {
@@ -204,9 +223,10 @@ public class InvoicesController : ControllerBase
             CustomerId = invoice.CustomerId,
             SalesChannelId = invoice.SalesChannelId,
             SalesRepresentativeId = invoice.SalesRepresentativeId,
+            InvoiceNumber = invoice.InvoiceNumber,
             InvoiceDate = invoice.InvoiceDate,
             TotalAmount = total,
-            Lines = invoice.Lines.Select(l => new InvoiceLineDto
+            Lines = lines.Select(l => new InvoiceLineDto
             {
                 Id = l.Id,
                 InvoiceId = l.InvoiceId,
