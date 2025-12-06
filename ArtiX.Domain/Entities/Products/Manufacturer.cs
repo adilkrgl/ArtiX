@@ -6,9 +6,11 @@ namespace ArtiX.Domain.Entities.Products;
 
 public class Manufacturer : BaseEntity
 {
-    public Guid CompanyId { get; set; }
+    public new Guid CompanyId { get; set; }
 
     public string Name { get; set; } = string.Empty;
+
+    public string? Code { get; set; }
 
     public string? ProductNameAtManufacturer { get; set; }
 

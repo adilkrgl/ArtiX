@@ -97,6 +97,7 @@ public class ManufacturersController : ControllerBase
             CompanyId = request.CompanyId,
             BranchId = request.BranchId,
             Name = request.Name,
+            Code = request.Code,
             ProductNameAtManufacturer = request.ProductNameAtManufacturer,
             Address = request.Address,
             Phone = request.Phone,
@@ -137,6 +138,7 @@ public class ManufacturersController : ControllerBase
 
         manufacturer.BranchId = request.BranchId;
         manufacturer.Name = request.Name;
+        manufacturer.Code = request.Code;
         manufacturer.ProductNameAtManufacturer = request.ProductNameAtManufacturer;
         manufacturer.Address = request.Address;
         manufacturer.Phone = request.Phone;
@@ -170,6 +172,7 @@ public class ManufacturersController : ControllerBase
         CompanyId = entity.CompanyId,
         BranchId = entity.BranchId,
         Name = entity.Name,
+        Code = entity.Code,
         ProductNameAtManufacturer = entity.ProductNameAtManufacturer,
         Address = entity.Address,
         Phone = entity.Phone,

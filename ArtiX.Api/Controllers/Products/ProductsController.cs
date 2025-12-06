@@ -42,6 +42,7 @@ public class ProductsController : ControllerBase
                 CompanyId = p.Manufacturer.CompanyId,
                 BranchId = p.Manufacturer.BranchId,
                 Name = p.Manufacturer.Name,
+                Code = p.Manufacturer.Code,
                 ProductNameAtManufacturer = p.Manufacturer.ProductNameAtManufacturer,
                 Address = p.Manufacturer.Address,
                 Phone = p.Manufacturer.Phone,
