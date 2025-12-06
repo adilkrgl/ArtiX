@@ -17,4 +17,6 @@ public class ProductDto
     public decimal WholesalePrice { get; set; }
     public bool IsActive { get; set; }
     public string? ManufacturerName { get; set; }
+
+    public ManufacturerDto? Manufacturer { get; set; }
 }
