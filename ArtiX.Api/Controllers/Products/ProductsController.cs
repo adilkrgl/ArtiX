@@ -40,6 +40,7 @@ public class ProductsController : ControllerBase
             {
                 Id = p.Manufacturer.Id,
                 CompanyId = p.Manufacturer.CompanyId,
+                BranchId = p.Manufacturer.BranchId,
                 Name = p.Manufacturer.Name,
                 ProductNameAtManufacturer = p.Manufacturer.ProductNameAtManufacturer,
                 Address = p.Manufacturer.Address,
@@ -273,6 +274,7 @@ public class ProductsController : ControllerBase
         {
             Id = entity.Manufacturer.Id,
             CompanyId = entity.Manufacturer.CompanyId,
+            BranchId = entity.Manufacturer.BranchId,
             Name = entity.Manufacturer.Name,
             ProductNameAtManufacturer = entity.Manufacturer.ProductNameAtManufacturer,
             Address = entity.Manufacturer.Address,
