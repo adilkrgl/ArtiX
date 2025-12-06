@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.2.0" />
     <ProjectReference Include="../ArtiX.Domain/ArtiX.Domain.csproj" />
   </ItemGroup>
 </Project>

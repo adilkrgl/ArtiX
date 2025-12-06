@@ -1,10 +1,12 @@
-using System.Data;
 using System.Linq;
 using System.Collections.Generic;
 using ArtiX.Api.Dtos.Sales;
+using ArtiX.Application.Invoices;
+using ArtiX.Application.Invoices.Commands;
 using ArtiX.Domain.Entities.Core;
 using ArtiX.Domain.Entities.Sales;
 using ArtiX.Infrastructure.Persistence;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,10 +19,12 @@ namespace ArtiX.Api.Controllers.Sales;
 public class InvoicesController : ControllerBase
 {
     private readonly ErpDbContext _db;
-    
-    public InvoicesController(ErpDbContext db)
+    private readonly IMediator _mediator;
+
+    public InvoicesController(ErpDbContext db, IMediator mediator)
     {
         _db = db;
+        _mediator = mediator;
     }
 
     [HttpGet]
@@ -68,73 +72,41 @@ public class InvoicesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<InvoiceDto>> CreateAsync([FromBody] CreateInvoiceRequest request)
     {
-        var validation = await ValidateHeaderAsync(request.CompanyId, request.BranchId, request.CustomerId, request.SalesChannelId, request.SalesRepresentativeId);
+        var validation = await ValidateHeaderAsync(request.CompanyId, request.CustomerId);
         if (validation is ObjectResult error)
         {
             return error;
         }
 
-        await using var transaction = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, HttpContext.RequestAborted);
-
-        var yearPrefix = DateTime.UtcNow.Year.ToString();
-        var maxForYear = await _db.Invoices
-            .Where(i => i.InvoiceNumber.StartsWith(yearPrefix))
-            .OrderByDescending(i => i.InvoiceNumber)
-            .Select(i => i.InvoiceNumber)
-            .FirstOrDefaultAsync(HttpContext.RequestAborted);
-
-        var nextSequence = 1;
-        if (!string.IsNullOrWhiteSpace(maxForYear) && maxForYear.Length > 4)
+        var command = new CreateInvoiceCommand
         {
-            var numericPart = maxForYear.Substring(4);
-            if (int.TryParse(numericPart, out var parsed))
-            {
-                nextSequence = parsed + 1;
-            }
-        }
-
-        var invoiceNumber = $"{yearPrefix}{nextSequence:D5}";
-
-        var lineRequests = request.Lines ?? new List<CreateInvoiceLineItem>();
-
-        var entity = new Invoice
-        {
-            Id = Guid.NewGuid(),
             CompanyId = request.CompanyId,
-            BranchId = request.BranchId,
             CustomerId = request.CustomerId,
-            SalesChannelId = request.SalesChannelId,
-            SalesRepresentativeId = request.SalesRepresentativeId,
-            InvoiceNumber = invoiceNumber,
             InvoiceDate = request.InvoiceDate,
-            CreatedAt = DateTime.UtcNow
+            CurrencyCode = request.CurrencyCode,
+            Lines = (request.Lines ?? new List<CreateInvoiceLineRequest>()).Select(l => new CreateInvoiceLineDto
+            {
+                ProductId = l.ProductId,
+                Quantity = l.Quantity,
+                DiscountRate = l.DiscountRate,
+                CustomDescription = l.CustomDescription,
+                LineNote = l.LineNote
+            }).ToList()
         };
 
-        foreach (var line in lineRequests)
-        {
-            if (line.ProductId == null && string.IsNullOrWhiteSpace(line.CustomDescription))
-            {
-                return BadRequest(new { message = "Custom lines must include a description when ProductId is not provided." });
-            }
+        var invoiceId = await _mediator.Send(command, HttpContext.RequestAborted);
 
-            entity.Lines.Add(new InvoiceLine
-            {
-                Id = Guid.NewGuid(),
-                InvoiceId = entity.Id,
-                ProductId = line.ProductId,
-                Quantity = line.Quantity,
-                UnitPrice = line.UnitPrice,
-                CustomDescription = line.CustomDescription,
-                LineNote = line.LineNote
-            });
+        var createdInvoice = await _db.Invoices
+            .Include(x => x.Lines)
+            .AsNoTracking()
+            .FirstOrDefaultAsync(x => x.Id == invoiceId, HttpContext.RequestAborted);
+
+        if (createdInvoice == null)
+        {
+            return NotFound();
         }
 
-        _db.Invoices.Add(entity);
-        await _db.SaveChangesAsync();
-
-        await transaction.CommitAsync(HttpContext.RequestAborted);
-
-        return CreatedAtAction(nameof(GetById), new { id = entity.Id }, ToDto(entity));
+        return CreatedAtAction(nameof(GetById), new { id = createdInvoice.Id }, ToDto(createdInvoice));
     }
 
     [HttpPut("{id:guid}")]
@@ -149,17 +121,15 @@ public class InvoicesController : ControllerBase
             return NotFound();
         }
 
-        var validation = await ValidateHeaderAsync(invoice.CompanyId, request.BranchId, request.CustomerId, request.SalesChannelId, request.SalesRepresentativeId);
+        var validation = await ValidateHeaderAsync(invoice.CompanyId, request.CustomerId);
         if (validation is ObjectResult error)
         {
             return error;
         }
 
-        invoice.BranchId = request.BranchId;
         invoice.CustomerId = request.CustomerId;
-        invoice.SalesChannelId = request.SalesChannelId;
-        invoice.SalesRepresentativeId = request.SalesRepresentativeId;
         invoice.InvoiceDate = request.InvoiceDate;
+        invoice.CurrencyCode = request.CurrencyCode;
         invoice.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -190,21 +160,12 @@ public class InvoicesController : ControllerBase
         return NoContent();
     }
 
-    private async Task<IActionResult?> ValidateHeaderAsync(Guid companyId, Guid? branchId, Guid? customerId, Guid? salesChannelId, Guid? salesRepresentativeId)
+    private async Task<IActionResult?> ValidateHeaderAsync(Guid companyId, Guid? customerId)
     {
         var companyExists = await _db.Companies.AnyAsync(x => x.Id == companyId);
         if (!companyExists)
         {
             return BadRequest(new { message = "Company not found." });
-        }
-
-        if (branchId.HasValue)
-        {
-            var branchValid = await _db.Branches.AnyAsync(x => x.Id == branchId.Value && x.CompanyId == companyId);
-            if (!branchValid)
-            {
-                return BadRequest(new { message = "Branch not found for the given company." });
-            }
         }
 
         if (customerId.HasValue)
@@ -216,50 +177,40 @@ public class InvoicesController : ControllerBase
             }
         }
 
-        if (salesChannelId.HasValue)
-        {
-            var channelValid = await _db.SalesChannels.AnyAsync(x => x.Id == salesChannelId.Value && x.CompanyId == companyId);
-            if (!channelValid)
-            {
-                return BadRequest(new { message = "Sales channel not found for the given company." });
-            }
-        }
-
-        if (salesRepresentativeId.HasValue)
-        {
-            var repValid = await _db.SalesRepresentatives.AnyAsync(x => x.Id == salesRepresentativeId.Value && x.CompanyId == companyId);
-            if (!repValid)
-            {
-                return BadRequest(new { message = "Sales representative not found for the given company." });
-            }
-        }
-
         return null;
     }
 
     private static InvoiceDto ToDto(Invoice invoice)
     {
         var lines = invoice.Lines ?? Enumerable.Empty<InvoiceLine>();
-        var total = lines.Sum(x => x.Quantity * x.UnitPrice);
-
         return new InvoiceDto
         {
             Id = invoice.Id,
             CompanyId = invoice.CompanyId,
-            BranchId = invoice.BranchId,
             CustomerId = invoice.CustomerId,
-            SalesChannelId = invoice.SalesChannelId,
-            SalesRepresentativeId = invoice.SalesRepresentativeId,
             InvoiceNumber = invoice.InvoiceNumber,
             InvoiceDate = invoice.InvoiceDate,
-            TotalAmount = total,
+            CurrencyCode = invoice.CurrencyCode,
+            ExchangeRate = invoice.ExchangeRate,
+            Subtotal = invoice.Subtotal,
+            DiscountTotal = invoice.DiscountTotal,
+            TaxTotal = invoice.TaxTotal,
+            Total = invoice.Total,
             Lines = lines.Select(l => new InvoiceLineDto
             {
                 Id = l.Id,
-                InvoiceId = l.InvoiceId,
                 ProductId = l.ProductId,
+                ProductSku = l.ProductSku,
+                ProductName = l.ProductName,
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
+                DiscountRate = l.DiscountRate,
+                DiscountAmount = l.DiscountAmount,
+                LineSubtotal = l.LineSubtotal,
+                LineTotal = l.LineTotal,
+                TaxRate = l.TaxRate,
+                TaxAmount = l.TaxAmount,
+                LineTotalWithTax = l.LineTotalWithTax,
                 CustomDescription = l.CustomDescription,
                 LineNote = l.LineNote
             }).ToList()

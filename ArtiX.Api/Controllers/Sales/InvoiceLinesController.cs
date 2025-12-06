@@ -34,10 +34,18 @@ public class InvoiceLinesController : ControllerBase
             .Select(x => new InvoiceLineDto
             {
                 Id = x.Id,
-                InvoiceId = x.InvoiceId,
                 ProductId = x.ProductId,
+                ProductSku = x.ProductSku,
+                ProductName = x.ProductName,
                 Quantity = x.Quantity,
                 UnitPrice = x.UnitPrice,
+                DiscountRate = x.DiscountRate,
+                DiscountAmount = x.DiscountAmount,
+                LineSubtotal = x.LineSubtotal,
+                LineTotal = x.LineTotal,
+                TaxRate = x.TaxRate,
+                TaxAmount = x.TaxAmount,
+                LineTotalWithTax = x.LineTotalWithTax,
                 CustomDescription = x.CustomDescription,
                 LineNote = x.LineNote
             })
@@ -54,10 +62,18 @@ public class InvoiceLinesController : ControllerBase
             .Select(x => new InvoiceLineDto
             {
                 Id = x.Id,
-                InvoiceId = x.InvoiceId,
                 ProductId = x.ProductId,
+                ProductSku = x.ProductSku,
+                ProductName = x.ProductName,
                 Quantity = x.Quantity,
                 UnitPrice = x.UnitPrice,
+                DiscountRate = x.DiscountRate,
+                DiscountAmount = x.DiscountAmount,
+                LineSubtotal = x.LineSubtotal,
+                LineTotal = x.LineTotal,
+                TaxRate = x.TaxRate,
+                TaxAmount = x.TaxAmount,
+                LineTotalWithTax = x.LineTotalWithTax,
                 CustomDescription = x.CustomDescription,
                 LineNote = x.LineNote
             })
@@ -72,9 +88,18 @@ public class InvoiceLinesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<InvoiceLineDto>> CreateAsync([FromBody] CreateInvoiceLineRequest request)
+    public async Task<ActionResult<InvoiceLineDto>> CreateAsync([FromQuery] Guid invoiceId, [FromBody] CreateInvoiceLineRequest request)
     {
-        var validationResult = await ValidateLineAsync(request.ProductId, request.CustomDescription, request.InvoiceId);
+        var invoice = await _db.Invoices
+            .Include(i => i.Lines)
+            .FirstOrDefaultAsync(i => i.Id == invoiceId);
+
+        if (invoice == null)
+        {
+            return BadRequest(new { message = "Invoice not found." });
+        }
+
+        var validationResult = await ValidateLineAsync(request.ProductId, request.CustomDescription, invoiceId);
         if (validationResult is ObjectResult errorResult)
         {
             return errorResult;
@@ -86,25 +111,34 @@ public class InvoiceLinesController : ControllerBase
             product = await _db.Products.FirstOrDefaultAsync(p => p.Id == request.ProductId.Value);
         }
 
-        var unitPrice = request.UnitPrice;
-        if (unitPrice == 0 && product is not null)
-        {
-            unitPrice = product.RetailPrice;
-        }
+        var unitPrice = product?.RetailPrice ?? 0m;
+        var taxRate = product?.TaxRate ?? 0m;
 
         var line = new InvoiceLine
         {
             Id = Guid.NewGuid(),
-            InvoiceId = request.InvoiceId,
-            ProductId = request.ProductId,
+            Invoice = invoice,
+            InvoiceId = invoice.Id,
+            ProductId = product?.Id,
+            Product = product,
+            ProductSku = product?.Sku,
+            ProductName = product?.Name,
             Quantity = request.Quantity,
             UnitPrice = unitPrice,
+            DiscountRate = request.DiscountRate,
+            TaxRate = taxRate,
             CustomDescription = request.CustomDescription,
             LineNote = request.LineNote,
             CreatedAt = DateTime.UtcNow
         };
 
+        RecalculateLine(line);
+
         _db.InvoiceLines.Add(line);
+        invoice.Lines.Add(line);
+
+        RecalculateInvoiceTotals(invoice);
+
         await _db.SaveChangesAsync();
 
         return Ok(ToDto(line));
@@ -113,7 +147,10 @@ public class InvoiceLinesController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<InvoiceLineDto>> UpdateAsync(Guid id, [FromBody] UpdateInvoiceLineRequest request)
     {
-        var line = await _db.InvoiceLines.FindAsync(id);
+        var line = await _db.InvoiceLines
+            .Include(l => l.Invoice)
+            .ThenInclude(i => i.Lines)
+            .FirstOrDefaultAsync(l => l.Id == id);
         if (line == null)
         {
             return NotFound();
@@ -125,12 +162,30 @@ public class InvoiceLinesController : ControllerBase
             return errorResult;
         }
 
-        line.ProductId = request.ProductId;
+        Product? product = null;
+        if (request.ProductId.HasValue)
+        {
+            product = await _db.Products.FirstOrDefaultAsync(p => p.Id == request.ProductId.Value);
+        }
+
+        line.ProductId = product?.Id;
+        line.Product = product;
+        line.ProductSku = product?.Sku;
+        line.ProductName = product?.Name;
         line.Quantity = request.Quantity;
-        line.UnitPrice = request.UnitPrice;
+        line.UnitPrice = product?.RetailPrice ?? 0m;
+        line.DiscountRate = request.DiscountRate;
+        line.TaxRate = product?.TaxRate ?? 0m;
         line.CustomDescription = request.CustomDescription;
         line.LineNote = request.LineNote;
         line.UpdatedAt = DateTime.UtcNow;
+
+        RecalculateLine(line);
+
+        if (line.Invoice != null)
+        {
+            RecalculateInvoiceTotals(line.Invoice);
+        }
 
         await _db.SaveChangesAsync();
 
@@ -140,10 +195,19 @@ public class InvoiceLinesController : ControllerBase
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> DeleteAsync(Guid id)
     {
-        var line = await _db.InvoiceLines.FindAsync(id);
+        var line = await _db.InvoiceLines
+            .Include(l => l.Invoice)
+            .ThenInclude(i => i.Lines)
+            .FirstOrDefaultAsync(l => l.Id == id);
         if (line == null)
         {
             return NotFound();
+        }
+
+        if (line.Invoice != null)
+        {
+            line.Invoice.Lines.Remove(line);
+            RecalculateInvoiceTotals(line.Invoice);
         }
 
         _db.InvoiceLines.Remove(line);
@@ -177,13 +241,39 @@ public class InvoiceLinesController : ControllerBase
         return null;
     }
 
+    private static void RecalculateLine(InvoiceLine line)
+    {
+        line.LineSubtotal = line.Quantity * line.UnitPrice;
+        line.DiscountAmount = (line.DiscountRate / 100m) * line.LineSubtotal;
+        line.LineTotal = line.LineSubtotal - line.DiscountAmount;
+        line.TaxAmount = (line.TaxRate / 100m) * line.LineTotal;
+        line.LineTotalWithTax = line.LineTotal + line.TaxAmount;
+    }
+
+    private static void RecalculateInvoiceTotals(Invoice invoice)
+    {
+        invoice.Subtotal = invoice.Lines.Sum(x => x.LineSubtotal);
+        invoice.DiscountTotal = invoice.Lines.Sum(x => x.DiscountAmount);
+        invoice.TaxTotal = invoice.Lines.Sum(x => x.TaxAmount);
+        invoice.Total = invoice.Lines.Sum(x => x.LineTotalWithTax);
+        invoice.UpdatedAt = DateTime.UtcNow;
+    }
+
     private static InvoiceLineDto ToDto(InvoiceLine line) => new()
     {
         Id = line.Id,
-        InvoiceId = line.InvoiceId,
         ProductId = line.ProductId,
+        ProductSku = line.ProductSku,
+        ProductName = line.ProductName,
         Quantity = line.Quantity,
         UnitPrice = line.UnitPrice,
+        DiscountRate = line.DiscountRate,
+        DiscountAmount = line.DiscountAmount,
+        LineSubtotal = line.LineSubtotal,
+        LineTotal = line.LineTotal,
+        TaxRate = line.TaxRate,
+        TaxAmount = line.TaxAmount,
+        LineTotalWithTax = line.LineTotalWithTax,
         CustomDescription = line.CustomDescription,
         LineNote = line.LineNote
     };
