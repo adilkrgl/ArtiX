@@ -23,6 +23,14 @@ public class InvoiceLineConfiguration : IEntityTypeConfiguration<InvoiceLine>
         builder.Property(x => x.ProductId)
             .IsRequired(false);
 
+        builder.Property(x => x.ProductSku)
+            .HasMaxLength(64)
+            .IsRequired(false);
+
+        builder.Property(x => x.ProductName)
+            .HasMaxLength(256)
+            .IsRequired(false);
+
         builder.Property(x => x.CustomDescription)
             .HasColumnType("nvarchar(max)")
             .IsRequired(false);
@@ -31,7 +39,31 @@ public class InvoiceLineConfiguration : IEntityTypeConfiguration<InvoiceLine>
             .HasColumnType("nvarchar(max)")
             .IsRequired(false);
 
+        builder.Property(x => x.Quantity)
+            .HasPrecision(18, 3);
+
         builder.Property(x => x.UnitPrice)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.DiscountRate)
+            .HasPrecision(5, 2);
+
+        builder.Property(x => x.DiscountAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.LineSubtotal)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.LineTotal)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.TaxRate)
+            .HasPrecision(5, 2);
+
+        builder.Property(x => x.TaxAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(x => x.LineTotalWithTax)
             .HasPrecision(18, 2);
     }
 }

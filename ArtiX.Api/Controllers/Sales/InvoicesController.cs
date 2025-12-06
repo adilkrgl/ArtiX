@@ -97,6 +97,16 @@ public class InvoicesController : ControllerBase
 
         var lineRequests = request.Lines ?? new List<CreateInvoiceLineItem>();
 
+        var productIds = lineRequests
+            .Where(x => x.ProductId.HasValue)
+            .Select(x => x.ProductId!.Value)
+            .Distinct()
+            .ToList();
+
+        var products = await _db.Products
+            .Where(p => productIds.Contains(p.Id))
+            .ToListAsync(HttpContext.RequestAborted);
+
         var entity = new Invoice
         {
             Id = Guid.NewGuid(),
@@ -107,6 +117,7 @@ public class InvoicesController : ControllerBase
             SalesRepresentativeId = request.SalesRepresentativeId,
             InvoiceNumber = invoiceNumber,
             InvoiceDate = request.InvoiceDate,
+            CurrencyCode = request.CurrencyCode,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -117,17 +128,44 @@ public class InvoicesController : ControllerBase
                 return BadRequest(new { message = "Custom lines must include a description when ProductId is not provided." });
             }
 
+            var product = line.ProductId.HasValue
+                ? products.FirstOrDefault(p => p.Id == line.ProductId.Value)
+                : null;
+
+            var unitPrice = product?.RetailPrice ?? 0m;
+            var taxRate = product?.TaxRate ?? 0m;
+            var lineSubtotal = line.Quantity * unitPrice;
+            var discountAmount = (line.DiscountRate / 100m) * lineSubtotal;
+            var lineTotal = lineSubtotal - discountAmount;
+            var taxAmount = (taxRate / 100m) * lineTotal;
+            var lineTotalWithTax = lineTotal + taxAmount;
+
             entity.Lines.Add(new InvoiceLine
             {
                 Id = Guid.NewGuid(),
-                InvoiceId = entity.Id,
-                ProductId = line.ProductId,
+                Invoice = entity,
+                ProductId = product?.Id,
+                Product = product,
+                ProductSku = product?.Sku,
+                ProductName = product?.Name,
                 Quantity = line.Quantity,
-                UnitPrice = line.UnitPrice,
+                UnitPrice = unitPrice,
+                DiscountRate = line.DiscountRate,
+                DiscountAmount = discountAmount,
+                LineSubtotal = lineSubtotal,
+                LineTotal = lineTotal,
+                TaxRate = taxRate,
+                TaxAmount = taxAmount,
+                LineTotalWithTax = lineTotalWithTax,
                 CustomDescription = line.CustomDescription,
                 LineNote = line.LineNote
             });
         }
+
+        entity.Subtotal = entity.Lines.Sum(x => x.LineSubtotal);
+        entity.DiscountTotal = entity.Lines.Sum(x => x.DiscountAmount);
+        entity.TaxTotal = entity.Lines.Sum(x => x.TaxAmount);
+        entity.Total = entity.Lines.Sum(x => x.LineTotalWithTax);
 
         _db.Invoices.Add(entity);
         await _db.SaveChangesAsync();
@@ -160,6 +198,8 @@ public class InvoicesController : ControllerBase
         invoice.SalesChannelId = request.SalesChannelId;
         invoice.SalesRepresentativeId = request.SalesRepresentativeId;
         invoice.InvoiceDate = request.InvoiceDate;
+        invoice.CurrencyCode = request.CurrencyCode;
+        invoice.ExchangeRate = request.ExchangeRate;
         invoice.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
@@ -240,7 +280,6 @@ public class InvoicesController : ControllerBase
     private static InvoiceDto ToDto(Invoice invoice)
     {
         var lines = invoice.Lines ?? Enumerable.Empty<InvoiceLine>();
-        var total = lines.Sum(x => x.Quantity * x.UnitPrice);
 
         return new InvoiceDto
         {
@@ -252,16 +291,30 @@ public class InvoicesController : ControllerBase
             SalesRepresentativeId = invoice.SalesRepresentativeId,
             InvoiceNumber = invoice.InvoiceNumber,
             InvoiceDate = invoice.InvoiceDate,
-            TotalAmount = total,
+            CurrencyCode = invoice.CurrencyCode,
+            ExchangeRate = invoice.ExchangeRate,
+            Subtotal = invoice.Subtotal,
+            DiscountTotal = invoice.DiscountTotal,
+            TaxTotal = invoice.TaxTotal,
+            Total = invoice.Total,
             Lines = lines.Select(l => new InvoiceLineDto
             {
                 Id = l.Id,
                 InvoiceId = l.InvoiceId,
                 ProductId = l.ProductId,
+                ProductSku = l.ProductSku,
+                ProductName = l.ProductName,
+                CustomDescription = l.CustomDescription,
+                LineNote = l.LineNote,
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
-                CustomDescription = l.CustomDescription,
-                LineNote = l.LineNote
+                DiscountRate = l.DiscountRate,
+                DiscountAmount = l.DiscountAmount,
+                LineSubtotal = l.LineSubtotal,
+                LineTotal = l.LineTotal,
+                TaxRate = l.TaxRate,
+                TaxAmount = l.TaxAmount,
+                LineTotalWithTax = l.LineTotalWithTax
             }).ToList()
         };
     }
