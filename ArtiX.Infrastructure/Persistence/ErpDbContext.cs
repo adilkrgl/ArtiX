@@ -50,7 +50,7 @@ public class ErpDbContext : DbContext
 
     public DbSet<ProductAttributeValue> ProductAttributeValues => Set<ProductAttributeValue>();
 
-    public DbSet<Manufacturer> Manufacturers => Set<Manufacturer>();
+    public DbSet<Manufacturer> Manufacturers { get; set; } = null!;
 
     public DbSet<Product> Products => Set<Product>();
 
