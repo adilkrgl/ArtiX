@@ -28,7 +28,7 @@ public class ManufacturersController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<ManufacturerDto>>> GetAll([FromQuery] Guid? companyId, [FromQuery] Guid? branchId)
     {
-        var query = _db.Manufacturers.AsNoTracking().AsQueryable();
+        var query = _db.Manufacturers.AsNoTracking().AsQueryable();       
 
         if (companyId.HasValue)
         {
