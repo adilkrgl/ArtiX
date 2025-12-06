@@ -8,6 +8,8 @@ public class Manufacturer : BaseEntity
 {
     public new Guid CompanyId { get; set; }
 
+    public new Guid? BranchId { get; set; }
+
     public string Name { get; set; } = string.Empty;
 
     public string? Code { get; set; }
