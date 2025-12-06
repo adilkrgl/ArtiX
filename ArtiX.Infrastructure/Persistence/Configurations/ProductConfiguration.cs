@@ -14,6 +14,15 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.IsActive)
             .HasDefaultValue(true);
 
+        builder.Property(p => p.CostPrice)
+            .HasPrecision(18, 2);
+
+        builder.Property(p => p.RetailPrice)
+            .HasPrecision(18, 2);
+
+        builder.Property(p => p.WholesalePrice)
+            .HasPrecision(18, 2);
+
         builder.HasOne(p => p.Company)
             .WithMany()
             .HasForeignKey(p => p.CompanyId)
@@ -27,6 +36,11 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.HasOne(p => p.ProductType)
             .WithMany()
             .HasForeignKey(p => p.ProductTypeId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(p => p.Manufacturer)
+            .WithMany()
+            .HasForeignKey(p => p.ManufacturerId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
