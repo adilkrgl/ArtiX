@@ -1,5 +1,6 @@
 using ArtiX.Domain.Common;
 using ArtiX.Domain.Entities.Core;
+using ProductEntity = ArtiX.Domain.Entities.Core.Product;
 
 namespace ArtiX.Domain.Entities.Products;
 
@@ -20,4 +21,6 @@ public class Manufacturer : BaseEntity
     public string? ContactPerson { get; set; }
 
     public Company Company { get; set; } = null!;
+
+    public ICollection<ProductEntity> Products { get; set; } = new List<ProductEntity>();
 }

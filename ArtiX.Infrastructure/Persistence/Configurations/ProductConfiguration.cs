@@ -39,7 +39,7 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(p => p.Manufacturer)
-            .WithMany()
+            .WithMany(m => m.Products)
             .HasForeignKey(p => p.ManufacturerId)
             .OnDelete(DeleteBehavior.Restrict);
     }
