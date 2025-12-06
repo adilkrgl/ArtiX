@@ -33,5 +33,18 @@ public class Invoice : BaseEntity
 
     public DateTime InvoiceDate { get; set; }
 
+    [MaxLength(10)]
+    public string CurrencyCode { get; set; } = "GBP";
+
+    public decimal? ExchangeRate { get; set; }
+
+    public decimal Subtotal { get; set; }
+
+    public decimal DiscountTotal { get; set; }
+
+    public decimal TaxTotal { get; set; }
+
+    public decimal Total { get; set; }
+
     public ICollection<InvoiceLine> Lines { get; set; } = new List<InvoiceLine>();
 }

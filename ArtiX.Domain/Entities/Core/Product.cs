@@ -22,6 +22,8 @@ public class Product : BaseEntity
 
     public decimal WholesalePrice { get; set; } = 0m;
 
+    public decimal TaxRate { get; set; } = 0m;
+
     public Guid? ManufacturerId { get; set; }
 
     public Manufacturer? Manufacturer { get; set; }
