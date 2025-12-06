@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using ArtiX.Api.Dtos.Products;
 using ArtiX.Domain.Entities.Core;
@@ -18,6 +19,35 @@ namespace ArtiX.Api.Controllers.Products;
 public class ProductsController : ControllerBase
 {
     private readonly ErpDbContext _db;
+
+    private static readonly Expression<Func<Product, ProductDto>> ToDtoExpression = p => new ProductDto
+    {
+        Id = p.Id,
+        CompanyId = p.CompanyId,
+        BranchId = p.BranchId,
+        ProductTypeId = p.ProductTypeId,
+        ManufacturerId = p.ManufacturerId,
+        Name = p.Name,
+        Sku = p.Sku,
+        Barcode = p.Barcode,
+        CostPrice = p.CostPrice,
+        RetailPrice = p.RetailPrice,
+        WholesalePrice = p.WholesalePrice,
+        IsActive = p.IsActive,
+        Manufacturer = p.Manufacturer == null
+            ? null
+            : new ManufacturerDto
+            {
+                Id = p.Manufacturer.Id,
+                CompanyId = p.Manufacturer.CompanyId,
+                Name = p.Manufacturer.Name,
+                ProductNameAtManufacturer = p.Manufacturer.ProductNameAtManufacturer,
+                Address = p.Manufacturer.Address,
+                Phone = p.Manufacturer.Phone,
+                Website = p.Manufacturer.Website,
+                ContactPerson = p.Manufacturer.ContactPerson
+            }
+    };
 
     public ProductsController(ErpDbContext db)
     {
@@ -64,8 +94,7 @@ public class ProductsController : ControllerBase
         }
 
         var results = await query
-            .Include(p => p.Manufacturer)
-            .Select(ToDto)
+            .Select(ToDtoExpression)
             .ToListAsync();
 
         return Ok(results);
@@ -75,14 +104,15 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<ProductDto>> GetById(Guid id)
     {
         var product = await _db.Products
-            .Include(p => p.Manufacturer)
-            .FirstOrDefaultAsync(p => p.Id == id);
+            .Where(p => p.Id == id)
+            .Select(ToDtoExpression)
+            .FirstOrDefaultAsync();
         if (product is null)
         {
             return NotFound();
         }
 
-        return Ok(ToDto(product));
+        return Ok(product);
     }
 
     [HttpPost]
