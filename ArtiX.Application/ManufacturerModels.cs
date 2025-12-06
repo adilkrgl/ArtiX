@@ -1,6 +1,6 @@
 using System;
 
-namespace ArtiX.Api.Dtos.Products;
+namespace ArtiX.Application;
 
 public class ManufacturerDto
 {
