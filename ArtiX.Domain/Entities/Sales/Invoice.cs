@@ -1,6 +1,7 @@
 using ArtiX.Domain.Common;
 using ArtiX.Domain.Entities.Core;
 using ArtiX.Domain.Entities.Customers;
+using System.ComponentModel.DataAnnotations;
 
 namespace ArtiX.Domain.Entities.Sales;
 
@@ -10,6 +11,8 @@ public class Invoice : BaseEntity
 
     public Company Company { get; set; } = null!;
 
+    [Required]
+    [MaxLength(16)]
     public string InvoiceNumber { get; set; } = string.Empty;
 
     public Guid? BranchId { get; set; }

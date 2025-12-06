@@ -64,7 +64,8 @@ public class ProductsController : ControllerBase
         }
 
         var results = await query
-            .Select(p => ToDto(p))
+            .Include(p => p.Manufacturer)
+            .Select(ToDto)
             .ToListAsync();
 
         return Ok(results);
@@ -73,7 +74,9 @@ public class ProductsController : ControllerBase
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<ProductDto>> GetById(Guid id)
     {
-        var product = await _db.Products.FindAsync(id);
+        var product = await _db.Products
+            .Include(p => p.Manufacturer)
+            .FirstOrDefaultAsync(p => p.Id == id);
         if (product is null)
         {
             return NotFound();
@@ -110,18 +113,37 @@ public class ProductsController : ControllerBase
             }
         }
 
+        Manufacturer? manufacturer = null;
+        if (request.ManufacturerId.HasValue)
+        {
+            manufacturer = await _db.Manufacturers.FindAsync(request.ManufacturerId.Value);
+            if (manufacturer is null || manufacturer.CompanyId != request.CompanyId)
+            {
+                return BadRequest(new { message = "Manufacturer not found or does not belong to the specified company." });
+            }
+        }
+
         var product = new Product
         {
             Id = Guid.NewGuid(),
             CompanyId = request.CompanyId,
             BranchId = request.BranchId,
             ProductTypeId = request.ProductTypeId,
+            ManufacturerId = request.ManufacturerId,
             Name = request.Name,
             Sku = request.Sku,
             Barcode = request.Barcode,
+            CostPrice = request.CostPrice,
+            RetailPrice = request.RetailPrice,
+            WholesalePrice = request.WholesalePrice,
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow
         };
+
+        if (manufacturer is not null)
+        {
+            product.Manufacturer = manufacturer;
+        }
 
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
@@ -133,7 +155,9 @@ public class ProductsController : ControllerBase
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<ProductDto>> Update(Guid id, [FromBody] UpdateProductRequest request)
     {
-        var product = await _db.Products.FindAsync(id);
+        var product = await _db.Products
+            .Include(p => p.Manufacturer)
+            .FirstOrDefaultAsync(p => p.Id == id);
         if (product is null)
         {
             return NotFound();
@@ -157,13 +181,29 @@ public class ProductsController : ControllerBase
             }
         }
 
+        Manufacturer? manufacturer = null;
+        if (request.ManufacturerId.HasValue)
+        {
+            manufacturer = await _db.Manufacturers.FindAsync(request.ManufacturerId.Value);
+            if (manufacturer is null || manufacturer.CompanyId != product.CompanyId)
+            {
+                return BadRequest(new { message = "Manufacturer not found or does not belong to the product's company." });
+            }
+        }
+
         product.BranchId = request.BranchId;
         product.ProductTypeId = request.ProductTypeId;
+        product.ManufacturerId = request.ManufacturerId;
         product.Name = request.Name;
         product.Sku = request.Sku;
         product.Barcode = request.Barcode;
+        product.CostPrice = request.CostPrice;
+        product.RetailPrice = request.RetailPrice;
+        product.WholesalePrice = request.WholesalePrice;
         product.IsActive = request.IsActive;
         product.UpdatedAt = DateTime.UtcNow;
+
+        product.Manufacturer = manufacturer;
 
         await _db.SaveChangesAsync();
 
@@ -191,9 +231,24 @@ public class ProductsController : ControllerBase
         CompanyId = entity.CompanyId,
         BranchId = entity.BranchId,
         ProductTypeId = entity.ProductTypeId,
+        ManufacturerId = entity.ManufacturerId,
         Name = entity.Name,
         Sku = entity.Sku,
         Barcode = entity.Barcode,
-        IsActive = entity.IsActive
+        CostPrice = entity.CostPrice,
+        RetailPrice = entity.RetailPrice,
+        WholesalePrice = entity.WholesalePrice,
+        IsActive = entity.IsActive,
+        Manufacturer = entity.Manufacturer is null ? null : new ManufacturerDto
+        {
+            Id = entity.Manufacturer.Id,
+            CompanyId = entity.Manufacturer.CompanyId,
+            Name = entity.Manufacturer.Name,
+            ProductNameAtManufacturer = entity.Manufacturer.ProductNameAtManufacturer,
+            Address = entity.Manufacturer.Address,
+            Phone = entity.Manufacturer.Phone,
+            Website = entity.Manufacturer.Website,
+            ContactPerson = entity.Manufacturer.ContactPerson
+        }
     };
 }

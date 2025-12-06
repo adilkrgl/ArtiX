@@ -16,6 +16,16 @@ public class Product : BaseEntity
 
     public string? Barcode { get; set; }
 
+    public decimal CostPrice { get; set; }
+
+    public decimal RetailPrice { get; set; }
+
+    public decimal WholesalePrice { get; set; }
+
+    public Guid? ManufacturerId { get; set; }
+
+    public Manufacturer? Manufacturer { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public Company Company { get; set; } = null!;

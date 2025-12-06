@@ -80,13 +80,25 @@ public class InvoiceLinesController : ControllerBase
             return errorResult;
         }
 
+        Product? product = null;
+        if (request.ProductId.HasValue)
+        {
+            product = await _db.Products.FirstOrDefaultAsync(p => p.Id == request.ProductId.Value);
+        }
+
+        var unitPrice = request.UnitPrice;
+        if (unitPrice == 0 && product is not null)
+        {
+            unitPrice = product.RetailPrice;
+        }
+
         var line = new InvoiceLine
         {
             Id = Guid.NewGuid(),
             InvoiceId = request.InvoiceId,
             ProductId = request.ProductId,
             Quantity = request.Quantity,
-            UnitPrice = request.UnitPrice,
+            UnitPrice = unitPrice,
             CustomDescription = request.CustomDescription,
             LineNote = request.LineNote,
             CreatedAt = DateTime.UtcNow
@@ -95,7 +107,7 @@ public class InvoiceLinesController : ControllerBase
         _db.InvoiceLines.Add(line);
         await _db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = line.Id }, ToDto(line));
+        return Ok(ToDto(line));
     }
 
     [HttpPut("{id:guid}")]
