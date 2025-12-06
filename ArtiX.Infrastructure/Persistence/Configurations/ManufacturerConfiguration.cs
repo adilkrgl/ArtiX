@@ -11,7 +11,20 @@ public class ManufacturerConfiguration : IEntityTypeConfiguration<Manufacturer>
         builder.ToTable("Manufacturers");
 
         builder.Property(m => m.Name)
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(256);
+
+        builder.Property(m => m.Code)
+            .HasMaxLength(64);
+
+        builder.Property(m => m.Phone)
+            .HasMaxLength(32);
+
+        builder.Property(m => m.Website)
+            .HasMaxLength(256);
+
+        builder.Property(m => m.ContactPerson)
+            .HasMaxLength(128);
 
         builder.HasOne(m => m.Company)
             .WithMany()
