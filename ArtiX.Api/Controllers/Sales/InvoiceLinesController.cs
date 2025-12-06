@@ -35,7 +35,6 @@ public class InvoiceLinesController : ControllerBase
             .Select(x => new InvoiceLineDto
             {
                 Id = x.Id,
-                InvoiceId = x.InvoiceId,
                 ProductId = x.ProductId,
                 ProductSku = x.ProductSku,
                 ProductName = x.ProductName,
@@ -64,7 +63,6 @@ public class InvoiceLinesController : ControllerBase
             .Select(x => new InvoiceLineDto
             {
                 Id = x.Id,
-                InvoiceId = x.InvoiceId,
                 ProductId = x.ProductId,
                 ProductSku = x.ProductSku,
                 ProductName = x.ProductName,
@@ -91,9 +89,9 @@ public class InvoiceLinesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<InvoiceLineDto>> CreateAsync([FromBody] CreateInvoiceLineRequest request)
+    public async Task<ActionResult<InvoiceLineDto>> CreateAsync([FromQuery] Guid invoiceId, [FromBody] CreateInvoiceLineRequest request)
     {
-        var validationResult = await ValidateLineAsync(request.ProductId, request.CustomDescription, request.InvoiceId);
+        var validationResult = await ValidateLineAsync(request.ProductId, request.CustomDescription, invoiceId);
         if (validationResult is ObjectResult errorResult)
         {
             return errorResult;
@@ -101,7 +99,7 @@ public class InvoiceLinesController : ControllerBase
 
         var invoice = await _db.Invoices
             .Include(i => i.Lines)
-            .FirstOrDefaultAsync(i => i.Id == request.InvoiceId);
+            .FirstOrDefaultAsync(i => i.Id == invoiceId);
 
         if (invoice == null)
         {
@@ -125,7 +123,7 @@ public class InvoiceLinesController : ControllerBase
         var line = new InvoiceLine
         {
             Id = Guid.NewGuid(),
-            InvoiceId = request.InvoiceId,
+            InvoiceId = invoiceId,
             ProductId = product?.Id,
             Product = product,
             ProductSku = product?.Sku,
@@ -275,7 +273,6 @@ public class InvoiceLinesController : ControllerBase
     private static InvoiceLineDto ToDto(InvoiceLine line) => new()
     {
         Id = line.Id,
-        InvoiceId = line.InvoiceId,
         ProductId = line.ProductId,
         ProductSku = line.ProductSku,
         ProductName = line.ProductName,

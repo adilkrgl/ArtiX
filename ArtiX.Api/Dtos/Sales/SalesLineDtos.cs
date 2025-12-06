@@ -27,7 +27,6 @@ public class SalesOrderLineDto
 public class InvoiceLineDto
 {
     public Guid Id { get; set; }
-    public Guid InvoiceId { get; set; }
     public Guid? ProductId { get; set; }
     public string? ProductSku { get; set; }
     public string? ProductName { get; set; }
@@ -42,6 +41,25 @@ public class InvoiceLineDto
     public decimal TaxRate { get; set; }
     public decimal TaxAmount { get; set; }
     public decimal LineTotalWithTax { get; set; }
+}
+
+public class CreateInvoiceLineDto
+{
+    public Guid? ProductId { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal DiscountRate { get; set; }
+    public string? CustomDescription { get; set; }
+    public string? LineNote { get; set; }
+}
+
+public class UpdateInvoiceLineDto
+{
+    public Guid Id { get; set; }
+    public Guid? ProductId { get; set; }
+    public decimal Quantity { get; set; }
+    public decimal DiscountRate { get; set; }
+    public string? CustomDescription { get; set; }
+    public string? LineNote { get; set; }
 }
 
 public class CreateQuotationLineRequest
@@ -84,7 +102,6 @@ public class UpdateSalesOrderLineRequest
 
 public class CreateInvoiceLineRequest
 {
-    public Guid InvoiceId { get; set; }
     public Guid? ProductId { get; set; }
     public decimal Quantity { get; set; }
     public decimal DiscountRate { get; set; }

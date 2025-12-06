@@ -31,7 +31,7 @@ public class CreateInvoiceRequest
     public Guid? SalesRepresentativeId { get; set; }
     public DateTime InvoiceDate { get; set; }
     public string CurrencyCode { get; set; } = "GBP";
-    public List<CreateInvoiceLineItem> Lines { get; set; } = new();
+    public List<CreateInvoiceLineRequest> Lines { get; set; } = new();
 }
 
 public class UpdateInvoiceRequest
@@ -43,13 +43,4 @@ public class UpdateInvoiceRequest
     public DateTime InvoiceDate { get; set; }
     public string CurrencyCode { get; set; } = "GBP";
     public decimal? ExchangeRate { get; set; }
-}
-
-public class CreateInvoiceLineItem
-{
-    public Guid? ProductId { get; set; }
-    public decimal Quantity { get; set; }
-    public decimal DiscountRate { get; set; }
-    public string? CustomDescription { get; set; }
-    public string? LineNote { get; set; }
 }

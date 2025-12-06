@@ -95,7 +95,7 @@ public class InvoicesController : ControllerBase
 
         var invoiceNumber = $"{yearPrefix}{nextSequence:D5}";
 
-        var lineRequests = request.Lines ?? new List<CreateInvoiceLineItem>();
+        var lineRequests = request.Lines ?? new List<CreateInvoiceLineRequest>();
 
         var productIds = lineRequests
             .Where(x => x.ProductId.HasValue)
@@ -300,7 +300,6 @@ public class InvoicesController : ControllerBase
             Lines = lines.Select(l => new InvoiceLineDto
             {
                 Id = l.Id,
-                InvoiceId = l.InvoiceId,
                 ProductId = l.ProductId,
                 ProductSku = l.ProductSku,
                 ProductName = l.ProductName,
