@@ -7,6 +7,7 @@ using ArtiX.Domain.Enums;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Xunit;
 
 namespace ArtiX.Application.Tests.SalesOrders;
 
