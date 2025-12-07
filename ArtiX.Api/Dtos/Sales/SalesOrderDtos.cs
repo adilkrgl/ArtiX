@@ -13,6 +13,7 @@ public class SalesOrderDto
     public Guid? SalesRepresentativeId { get; set; }
     public DateTime OrderDate { get; set; }
     public string? Status { get; set; }
+    public decimal TotalAmount { get; set; }
     public List<SalesOrderLineDto> Lines { get; set; } = new();
 }
 
@@ -23,7 +24,9 @@ public class CreateSalesOrderRequest
     public Guid? CustomerId { get; set; }
     public Guid? SalesChannelId { get; set; }
     public Guid? SalesRepresentativeId { get; set; }
-    public DateTime OrderDate { get; set; }
+    public DateTime? OrderDate { get; set; }
+    public string? Status { get; set; }
+    public List<CreateSalesOrderLineRequest>? Lines { get; set; }
 }
 
 public class UpdateSalesOrderRequest
@@ -32,6 +35,7 @@ public class UpdateSalesOrderRequest
     public Guid? CustomerId { get; set; }
     public Guid? SalesChannelId { get; set; }
     public Guid? SalesRepresentativeId { get; set; }
-    public DateTime OrderDate { get; set; }
+    public DateTime? OrderDate { get; set; }
     public string? Status { get; set; }
+    public List<UpdateSalesOrderLineRequest>? Lines { get; set; }
 }

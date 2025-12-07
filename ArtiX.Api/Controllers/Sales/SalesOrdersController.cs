@@ -9,8 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace ArtiX.Api.Controllers.Sales;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/sales/[controller]")]
 [Authorize(Roles = "Admin")]
+[ApiExplorerSettings(GroupName = "Sales")]
 public class SalesOrdersController : ControllerBase
 {
     private readonly ErpDbContext _db;
@@ -43,7 +44,7 @@ public class SalesOrdersController : ControllerBase
         }
 
         var items = await query.AsNoTracking().ToListAsync();
-        return items.Select(ToDto).ToList();
+        return Ok(items.Select(ToDto).ToList());
     }
 
     [HttpGet("{id:guid}")]
@@ -59,12 +60,17 @@ public class SalesOrdersController : ControllerBase
             return NotFound();
         }
 
-        return ToDto(order);
+        return Ok(ToDto(order));
     }
 
     [HttpPost]
     public async Task<ActionResult<SalesOrderDto>> CreateAsync([FromBody] CreateSalesOrderRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
         var validation = await ValidateHeaderAsync(request.CompanyId, request.BranchId, request.CustomerId, request.SalesChannelId, request.SalesRepresentativeId);
         if (validation is ObjectResult error)
         {
@@ -79,14 +85,38 @@ public class SalesOrdersController : ControllerBase
             CustomerId = request.CustomerId,
             SalesChannelId = request.SalesChannelId,
             SalesRepresentativeId = request.SalesRepresentativeId,
-            OrderDate = request.OrderDate,
+            OrderDate = request.OrderDate ?? DateTime.UtcNow,
+            Status = string.IsNullOrWhiteSpace(request.Status) ? "Draft" : request.Status,
             CreatedAt = DateTime.UtcNow
         };
 
         _db.SalesOrders.Add(entity);
-        await _db.SaveChangesAsync();
 
-        entity.Lines = new List<SalesOrderLine>();
+        if (request.Lines != null && request.Lines.Any())
+        {
+            foreach (var lineRequest in request.Lines)
+            {
+                var line = new SalesOrderLine
+                {
+                    Id = Guid.NewGuid(),
+                    SalesOrder = entity,
+                    SalesOrderId = entity.Id,
+                    ProductId = lineRequest.ProductId,
+                    Quantity = lineRequest.Quantity,
+                    UnitPrice = lineRequest.UnitPrice,
+                    CustomDescription = lineRequest.CustomDescription,
+                    LineNote = lineRequest.LineNote,
+                    CompanyId = entity.CompanyId,
+                    BranchId = entity.BranchId,
+                    TenantId = entity.TenantId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                entity.Lines.Add(line);
+            }
+        }
+
+        await _db.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetByIdAsync), new { id = entity.Id }, ToDto(entity));
     }
@@ -103,6 +133,11 @@ public class SalesOrdersController : ControllerBase
             return NotFound();
         }
 
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
         var validation = await ValidateHeaderAsync(order.CompanyId, request.BranchId, request.CustomerId, request.SalesChannelId, request.SalesRepresentativeId);
         if (validation is ObjectResult error)
         {
@@ -113,13 +148,18 @@ public class SalesOrdersController : ControllerBase
         order.CustomerId = request.CustomerId;
         order.SalesChannelId = request.SalesChannelId;
         order.SalesRepresentativeId = request.SalesRepresentativeId;
-        order.OrderDate = request.OrderDate;
-        order.Status = request.Status ?? order.Status;
+        order.OrderDate = request.OrderDate ?? order.OrderDate;
+        order.Status = string.IsNullOrWhiteSpace(request.Status) ? order.Status : request.Status;
         order.UpdatedAt = DateTime.UtcNow;
 
         await _db.SaveChangesAsync();
 
-        return ToDto(order);
+        var reloaded = await _db.SalesOrders
+            .Include(x => x.Lines)
+            .AsNoTracking()
+            .FirstAsync(x => x.Id == order.Id);
+
+        return Ok(ToDto(reloaded));
     }
 
     [HttpDelete("{id:guid}")]
@@ -136,7 +176,7 @@ public class SalesOrdersController : ControllerBase
 
         if (order.Lines.Any())
         {
-            return BadRequest(new { message = "Cannot delete sales order with existing lines." });
+            _db.SalesOrderLines.RemoveRange(order.Lines);
         }
 
         _db.SalesOrders.Remove(order);
@@ -147,6 +187,11 @@ public class SalesOrdersController : ControllerBase
 
     private async Task<IActionResult?> ValidateHeaderAsync(Guid companyId, Guid? branchId, Guid? customerId, Guid? salesChannelId, Guid? salesRepresentativeId)
     {
+        if (companyId == Guid.Empty)
+        {
+            return BadRequest(new { message = "CompanyId is required." });
+        }
+
         var companyExists = await _db.Companies.AnyAsync(x => x.Id == companyId);
         if (!companyExists)
         {
@@ -164,7 +209,10 @@ public class SalesOrdersController : ControllerBase
 
         if (customerId.HasValue)
         {
-            var customerValid = await _db.Customers.AnyAsync(x => x.Id == customerId.Value && x.CompanyId == companyId);
+            var customerValid = await _db.Customers.AnyAsync(x =>
+                x.Id == customerId.Value &&
+                x.CompanyId == companyId &&
+                (!branchId.HasValue || x.BranchId == null || x.BranchId == branchId));
             if (!customerValid)
             {
                 return BadRequest(new { message = "Customer not found for the given company." });
@@ -194,6 +242,8 @@ public class SalesOrdersController : ControllerBase
 
     private static SalesOrderDto ToDto(SalesOrder order)
     {
+        var lines = order.Lines ?? Enumerable.Empty<SalesOrderLine>();
+
         return new SalesOrderDto
         {
             Id = order.Id,
@@ -204,7 +254,8 @@ public class SalesOrdersController : ControllerBase
             SalesRepresentativeId = order.SalesRepresentativeId,
             OrderDate = order.OrderDate,
             Status = order.Status,
-            Lines = order.Lines.Select(l => new SalesOrderLineDto
+            TotalAmount = lines.Sum(l => l.Quantity * l.UnitPrice),
+            Lines = lines.Select(l => new SalesOrderLineDto
             {
                 Id = l.Id,
                 SalesOrderId = l.SalesOrderId,

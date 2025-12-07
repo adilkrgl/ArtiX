@@ -9,8 +9,9 @@ using Microsoft.EntityFrameworkCore;
 namespace ArtiX.Api.Controllers.Sales;
 
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/sales/[controller]")]
 [Authorize(Roles = "Admin")]
+[ApiExplorerSettings(GroupName = "Sales")]
 public class SalesOrderLinesController : ControllerBase
 {
     private readonly ErpDbContext _db;
@@ -21,7 +22,7 @@ public class SalesOrderLinesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<SalesOrderLineDto>>> GetAsync([FromQuery] Guid? salesOrderId)
+    public async Task<ActionResult<List<SalesOrderLineDto>>> GetAsync([FromQuery] Guid? salesOrderId, [FromQuery] Guid? companyId, [FromQuery] Guid? branchId)
     {
         var query = _db.SalesOrderLines.AsQueryable();
 
@@ -30,12 +31,23 @@ public class SalesOrderLinesController : ControllerBase
             query = query.Where(x => x.SalesOrderId == salesOrderId.Value);
         }
 
+        if (companyId.HasValue)
+        {
+            query = query.Where(x => x.CompanyId == companyId.Value);
+        }
+
+        if (branchId.HasValue)
+        {
+            query = query.Where(x => x.BranchId == branchId.Value);
+        }
+
         var items = await query
+            .AsNoTracking()
             .Select(x => new SalesOrderLineDto
             {
                 Id = x.Id,
                 SalesOrderId = x.SalesOrderId,
-                ProductId = x.ProductId,
+                ProductId = x.ProductId ?? Guid.Empty,
                 Quantity = x.Quantity,
                 UnitPrice = x.UnitPrice,
                 CustomDescription = x.CustomDescription,
@@ -55,7 +67,7 @@ public class SalesOrderLinesController : ControllerBase
             {
                 Id = x.Id,
                 SalesOrderId = x.SalesOrderId,
-                ProductId = x.ProductId,
+                ProductId = x.ProductId ?? Guid.Empty,
                 Quantity = x.Quantity,
                 UnitPrice = x.UnitPrice,
                 CustomDescription = x.CustomDescription,
@@ -74,11 +86,18 @@ public class SalesOrderLinesController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<SalesOrderLineDto>> CreateAsync([FromBody] CreateSalesOrderLineRequest request)
     {
-        var validationResult = await ValidateLineAsync(request.ProductId, request.CustomDescription, request.SalesOrderId);
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
+        var validationResult = await ValidateLineAsync(request.ProductId, request.SalesOrderId);
         if (validationResult is ObjectResult errorResult)
         {
             return errorResult;
         }
+
+        var parentOrder = await _db.SalesOrders.FirstAsync(x => x.Id == request.SalesOrderId);
 
         var line = new SalesOrderLine
         {
@@ -89,6 +108,9 @@ public class SalesOrderLinesController : ControllerBase
             UnitPrice = request.UnitPrice,
             CustomDescription = request.CustomDescription,
             LineNote = request.LineNote,
+            CompanyId = parentOrder.CompanyId,
+            BranchId = parentOrder.BranchId,
+            TenantId = parentOrder.TenantId,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -107,13 +129,11 @@ public class SalesOrderLinesController : ControllerBase
             return NotFound();
         }
 
-        var validationResult = await ValidateLineAsync(request.ProductId, request.CustomDescription, line.SalesOrderId);
-        if (validationResult is ObjectResult errorResult)
+        if (!ModelState.IsValid)
         {
-            return errorResult;
+            return ValidationProblem(ModelState);
         }
 
-        line.ProductId = request.ProductId;
         line.Quantity = request.Quantity;
         line.UnitPrice = request.UnitPrice;
         line.CustomDescription = request.CustomDescription;
@@ -140,26 +160,18 @@ public class SalesOrderLinesController : ControllerBase
         return NoContent();
     }
 
-    private async Task<IActionResult?> ValidateLineAsync(Guid? productId, string? customDescription, Guid salesOrderId)
+    private async Task<IActionResult?> ValidateLineAsync(Guid productId, Guid salesOrderId)
     {
         var orderExists = await _db.SalesOrders.AnyAsync(x => x.Id == salesOrderId);
         if (!orderExists)
         {
-            return BadRequest(new { message = "Sales order not found." });
+            return BadRequest(new { message = "SalesOrder not found" });
         }
 
-        if (!productId.HasValue && string.IsNullOrWhiteSpace(customDescription))
+        var productExists = await _db.Products.AnyAsync(p => p.Id == productId);
+        if (!productExists)
         {
-            return BadRequest(new { message = "CustomDescription is required when ProductId is not provided." });
-        }
-
-        if (productId.HasValue)
-        {
-            var productExists = await _db.Products.AnyAsync(p => p.Id == productId.Value);
-            if (!productExists)
-            {
-                return BadRequest(new { message = "Product not found." });
-            }
+            return BadRequest(new { message = "Product not found" });
         }
 
         return null;
@@ -169,7 +181,7 @@ public class SalesOrderLinesController : ControllerBase
     {
         Id = line.Id,
         SalesOrderId = line.SalesOrderId,
-        ProductId = line.ProductId,
+        ProductId = line.ProductId ?? Guid.Empty,
         Quantity = line.Quantity,
         UnitPrice = line.UnitPrice,
         CustomDescription = line.CustomDescription,

@@ -18,5 +18,6 @@
     <ProjectReference Include="../ArtiX.Application/ArtiX.Application.csproj" />
     <ProjectReference Include="../ArtiX.Infrastructure/ArtiX.Infrastructure.csproj" />
     <ProjectReference Include="../ArtiX.Domain/ArtiX.Domain.csproj" />
+    <ProjectReference Include="../ArtiX.Api/ArtiX.Api.csproj" />
   </ItemGroup>
 </Project>
