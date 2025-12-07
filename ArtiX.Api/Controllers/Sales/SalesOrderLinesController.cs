@@ -47,7 +47,7 @@ public class SalesOrderLinesController : ControllerBase
             {
                 Id = x.Id,
                 SalesOrderId = x.SalesOrderId,
-                ProductId = x.ProductId ?? Guid.Empty,
+                ProductId = x.ProductId,
                 Quantity = x.Quantity,
                 UnitPrice = x.UnitPrice,
                 CustomDescription = x.CustomDescription,
@@ -67,7 +67,7 @@ public class SalesOrderLinesController : ControllerBase
             {
                 Id = x.Id,
                 SalesOrderId = x.SalesOrderId,
-                ProductId = x.ProductId ?? Guid.Empty,
+                ProductId = x.ProductId,
                 Quantity = x.Quantity,
                 UnitPrice = x.UnitPrice,
                 CustomDescription = x.CustomDescription,
@@ -160,7 +160,7 @@ public class SalesOrderLinesController : ControllerBase
         return NoContent();
     }
 
-    private async Task<IActionResult?> ValidateLineAsync(Guid productId, Guid salesOrderId)
+    private async Task<IActionResult?> ValidateLineAsync(Guid? productId, Guid salesOrderId)
     {
         var orderExists = await _db.SalesOrders.AnyAsync(x => x.Id == salesOrderId);
         if (!orderExists)
@@ -168,10 +168,13 @@ public class SalesOrderLinesController : ControllerBase
             return BadRequest(new { message = "SalesOrder not found" });
         }
 
-        var productExists = await _db.Products.AnyAsync(p => p.Id == productId);
-        if (!productExists)
+        if (productId.HasValue)
         {
-            return BadRequest(new { message = "Product not found" });
+            var productExists = await _db.Products.AnyAsync(p => p.Id == productId.Value);
+            if (!productExists)
+            {
+                return BadRequest(new { message = "Product not found" });
+            }
         }
 
         return null;
@@ -181,7 +184,7 @@ public class SalesOrderLinesController : ControllerBase
     {
         Id = line.Id,
         SalesOrderId = line.SalesOrderId,
-        ProductId = line.ProductId ?? Guid.Empty,
+        ProductId = line.ProductId,
         Quantity = line.Quantity,
         UnitPrice = line.UnitPrice,
         CustomDescription = line.CustomDescription,
