@@ -1,5 +1,6 @@
 using ArtiX.Api.Controllers.Products;
 using ArtiX.Api.Dtos.Products;
+using ArtiX.Application.Products;
 using ArtiX.Application.Tests.Common;
 using ArtiX.Domain.Entities.Core;
 using ArtiX.Domain.Entities.Products;

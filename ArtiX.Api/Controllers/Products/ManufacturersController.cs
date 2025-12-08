@@ -4,6 +4,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using ArtiX.Api.Dtos.Products;
+using ArtiX.Application.Products;
 using ArtiX.Domain.Entities.Core;
 using ArtiX.Domain.Entities.Products;
 using ArtiX.Infrastructure.Persistence;
