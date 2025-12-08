@@ -43,7 +43,7 @@ public class SalesOrdersControllerTests
             }
         };
 
-        var result = await controller.CreateAsync(request);
+        var result = await controller.CreateAsync(request.CompanyId, request);
 
         var created = result.Result as CreatedAtActionResult;
         created.Should().NotBeNull();
@@ -159,7 +159,7 @@ public class SalesOrdersControllerTests
             Status = "Confirmed"
         };
 
-        var result = await controller.UpdateAsync(order.Id, updateRequest);
+        var result = await controller.UpdateAsync(seed.CompanyId, order.Id, updateRequest);
 
         var okResult = result.Result as OkObjectResult;
         okResult.Should().NotBeNull();
@@ -208,7 +208,7 @@ public class SalesOrdersControllerTests
 
         var controller = new SalesOrdersController(context);
 
-        var result = await controller.DeleteAsync(order.Id);
+        var result = await controller.DeleteAsync(seed.CompanyId, order.Id);
 
         result.Should().BeOfType<NoContentResult>();
 
