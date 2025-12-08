@@ -10,8 +10,7 @@ namespace ArtiX.Api.Controllers.Sales;
 
 [ApiController]
 [Route("api/sales/[controller]")]
-[Authorize(Roles = "Admin")]
-[ApiExplorerSettings(GroupName = "Sales")]
+[Authorize(Roles = "Admin")] 
 public class SalesOrderLinesController : ControllerBase
 {
     private readonly ErpDbContext _db;

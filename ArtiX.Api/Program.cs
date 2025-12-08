@@ -7,6 +7,7 @@ using ArtiX.Infrastructure.Auth;
 using ArtiX.Infrastructure.Invoices;
 using ArtiX.Infrastructure.Persistence;
 using MediatR;
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -58,11 +59,11 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 builder.Services.AddScoped<IInvoiceNumberGenerator, InvoiceNumberGenerator>();
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(typeof(CreateInvoiceCommand).Assembly);
-    cfg.RegisterServicesFromAssembly(typeof(CreateInvoiceCommandHandler).Assembly);
-});
+
+builder.Services.AddMediatR(
+    typeof(CreateInvoiceCommand).Assembly,
+    typeof(CreateInvoiceCommandHandler).Assembly
+);
 
 var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? throw new InvalidOperationException("Jwt configuration is missing.");
 var key = Encoding.UTF8.GetBytes(jwtOptions.Key);
