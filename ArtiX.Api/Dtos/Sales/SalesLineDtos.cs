@@ -74,6 +74,7 @@ public class CreateSalesOrderLineRequest
 
 public class UpdateSalesOrderLineRequest
 {
+    public Guid? ProductId { get; set; }
     public int Quantity { get; set; }
     public decimal UnitPrice { get; set; }
     public string? CustomDescription { get; set; }
