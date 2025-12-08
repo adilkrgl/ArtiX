@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace ArtiX.Api.Controllers.Sales;
 
 [ApiController]
-[Route("api/sales/[controller]")]
+[Route("api/companies/{companyId:guid}/sales-orders")]
 [Authorize(Roles = "Admin")]
 [ApiExplorerSettings(GroupName = "Sales")]
 public class SalesOrdersController : ControllerBase
@@ -22,16 +22,12 @@ public class SalesOrdersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<SalesOrderDto>>> GetAsync([FromQuery] Guid? companyId, [FromQuery] Guid? branchId, [FromQuery] Guid? customerId)
+    public async Task<ActionResult<List<SalesOrderDto>>> GetAsync(Guid companyId, [FromQuery] Guid? branchId, [FromQuery] Guid? customerId)
     {
         var query = _db.SalesOrders
             .Include(x => x.Lines)
+            .Where(x => x.CompanyId == companyId)
             .AsQueryable();
-
-        if (companyId.HasValue)
-        {
-            query = query.Where(x => x.CompanyId == companyId.Value);
-        }
 
         if (branchId.HasValue)
         {
@@ -48,12 +44,12 @@ public class SalesOrdersController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<SalesOrderDto>> GetByIdAsync(Guid id)
+    public async Task<ActionResult<SalesOrderDto>> GetByIdAsync(Guid companyId, Guid id)
     {
         var order = await _db.SalesOrders
             .Include(x => x.Lines)
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
         if (order == null)
         {
@@ -64,14 +60,20 @@ public class SalesOrdersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<SalesOrderDto>> CreateAsync([FromBody] CreateSalesOrderRequest request)
+    public async Task<ActionResult<SalesOrderDto>> CreateAsync(Guid companyId, [FromBody] CreateSalesOrderRequest request)
     {
         if (!ModelState.IsValid)
         {
             return ValidationProblem(ModelState);
         }
 
-        var validation = await ValidateHeaderAsync(request.CompanyId, request.BranchId, request.CustomerId, request.SalesChannelId, request.SalesRepresentativeId);
+        var resolvedCompanyId = request.CompanyId == Guid.Empty ? companyId : request.CompanyId;
+        if (resolvedCompanyId != companyId)
+        {
+            return BadRequest(new { message = "CompanyId mismatch between route and payload." });
+        }
+
+        var validation = await ValidateHeaderAsync(companyId, request.BranchId, request.CustomerId, request.SalesChannelId, request.SalesRepresentativeId);
         if (validation is ObjectResult error)
         {
             return error;
@@ -80,7 +82,7 @@ public class SalesOrdersController : ControllerBase
         var entity = new SalesOrder
         {
             Id = Guid.NewGuid(),
-            CompanyId = request.CompanyId,
+            CompanyId = companyId,
             BranchId = request.BranchId,
             CustomerId = request.CustomerId,
             SalesChannelId = request.SalesChannelId,
@@ -118,15 +120,15 @@ public class SalesOrdersController : ControllerBase
 
         await _db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetByIdAsync), new { id = entity.Id }, ToDto(entity));
+        return CreatedAtAction(nameof(GetByIdAsync), new { companyId, id = entity.Id }, ToDto(entity));
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<SalesOrderDto>> UpdateAsync(Guid id, [FromBody] UpdateSalesOrderRequest request)
+    public async Task<ActionResult<SalesOrderDto>> UpdateAsync(Guid companyId, Guid id, [FromBody] UpdateSalesOrderRequest request)
     {
         var order = await _db.SalesOrders
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
         if (order == null)
         {
@@ -163,11 +165,11 @@ public class SalesOrdersController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeleteAsync(Guid id)
+    public async Task<IActionResult> DeleteAsync(Guid companyId, Guid id)
     {
         var order = await _db.SalesOrders
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.Id == id);
+            .FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
 
         if (order == null)
         {
