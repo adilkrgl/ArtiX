@@ -10,6 +10,9 @@ public class ManufacturerConfiguration : IEntityTypeConfiguration<Manufacturer>
     {
         builder.ToTable("Manufacturers");
 
+        builder.Property(m => m.CompanyId)
+            .IsRequired();
+
         builder.Property(m => m.Name)
             .IsRequired()
             .HasMaxLength(256);
@@ -29,6 +32,11 @@ public class ManufacturerConfiguration : IEntityTypeConfiguration<Manufacturer>
         builder.HasOne(m => m.Company)
             .WithMany()
             .HasForeignKey(m => m.CompanyId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.HasOne(m => m.Branch)
+            .WithMany()
+            .HasForeignKey(m => m.BranchId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
