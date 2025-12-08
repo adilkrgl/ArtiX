@@ -1,10 +1,10 @@
 ﻿using ArtiX.Api.Dtos.Sales;
-using ArtiX.Domain.Entities.Core;
 using ArtiX.Domain.Entities.Sales;
 using ArtiX.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace ArtiX.Api.Controllers.Sales;
 
@@ -15,18 +15,50 @@ public class SalesOrdersController : ControllerBase
 {
     private readonly ErpDbContext _db;
 
+    private static readonly Expression<Func<SalesOrder, SalesOrderDto>> ToDtoExpression = order => new SalesOrderDto
+    {
+        Id = order.Id,
+        CompanyId = order.CompanyId,
+        BranchId = order.BranchId,
+        CustomerId = order.CustomerId,
+        SalesChannelId = order.SalesChannelId,
+        SalesRepresentativeId = order.SalesRepresentativeId,
+        OrderDate = order.OrderDate,
+        Status = order.Status,
+        TotalAmount = order.Lines.Sum(l => l.Quantity * l.UnitPrice),
+        Lines = order.Lines.Select(l => new SalesOrderLineDto
+        {
+            Id = l.Id,
+            SalesOrderId = l.SalesOrderId,
+            ProductId = l.ProductId,
+            Quantity = l.Quantity,
+            UnitPrice = l.UnitPrice,
+            CustomDescription = l.CustomDescription,
+            LineNote = l.LineNote
+        }).ToList()
+    };
+
+    private static SalesOrderDto ToDto(SalesOrder order) => ToDtoExpression.Compile().Invoke(order);
+
     public SalesOrdersController(ErpDbContext db)
     {
         _db = db;
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<SalesOrderDto>>> GetAsync(Guid companyId, [FromQuery] Guid? branchId, [FromQuery] Guid? customerId)
+    public async Task<ActionResult<List<SalesOrderDto>>> GetAsync(
+        [FromQuery] Guid? companyId,
+        [FromQuery] Guid? branchId,
+        [FromQuery] Guid? customerId)
     {
         var query = _db.SalesOrders
             .Include(x => x.Lines)
-            .Where(x => x.CompanyId == companyId)
             .AsQueryable();
+
+        if (companyId.HasValue)
+        {
+            query = query.Where(x => x.CompanyId == companyId.Value);
+        }
 
         if (branchId.HasValue)
         {
@@ -38,28 +70,32 @@ public class SalesOrdersController : ControllerBase
             query = query.Where(x => x.CustomerId == customerId.Value);
         }
 
-        var items = await query.AsNoTracking().ToListAsync();
-        return Ok(items.Select(ToDto).ToList());
+        var items = await query
+            .Select(ToDtoExpression)
+            .ToListAsync();
+
+        return Ok(items);
     }
 
     [HttpGet("{id:guid}")]
-    public async Task<ActionResult<SalesOrderDto>> GetByIdAsync(Guid companyId, Guid id)
+    public async Task<ActionResult<SalesOrderDto>> GetByIdAsync(Guid id)
     {
         var order = await _db.SalesOrders
+            .Where(x => x.Id == id)
             .Include(x => x.Lines)
-            .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
+            .Select(ToDtoExpression)
+            .FirstOrDefaultAsync();
 
         if (order == null)
         {
             return NotFound();
         }
 
-        return Ok(ToDto(order));
+        return Ok(order);
     }
 
     [HttpPost]
-    public async Task<ActionResult<SalesOrderDto>> CreateAsync(Guid companyId, [FromBody] CreateSalesOrderRequest request)
+    public async Task<ActionResult<SalesOrderDto>> CreateAsync([FromBody] CreateSalesOrderRequest request)
     {
         if (!ModelState.IsValid)
         {
@@ -108,8 +144,6 @@ public class SalesOrdersController : ControllerBase
             Lines = new List<SalesOrderLine>()   // ✅ Null olmaz
         };
 
-        _db.SalesOrders.Add(entity);
-
         if (request.Lines != null && request.Lines.Any())
         {
             foreach (var lineRequest in request.Lines)
@@ -134,26 +168,27 @@ public class SalesOrdersController : ControllerBase
             }
         }
 
+        _db.SalesOrders.Add(entity);
         await _db.SaveChangesAsync();
 
         return CreatedAtAction(nameof(GetByIdAsync), new { companyId = effectiveCompanyId, id = entity.Id }, ToDto(entity));
     }
 
     [HttpPut("{id:guid}")]
-    public async Task<ActionResult<SalesOrderDto>> UpdateAsync(Guid companyId, Guid id, [FromBody] UpdateSalesOrderRequest request)
+    public async Task<ActionResult<SalesOrderDto>> UpdateAsync(Guid id, [FromBody] UpdateSalesOrderRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            return ValidationProblem(ModelState);
+        }
+
         var order = await _db.SalesOrders
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
+            .FirstOrDefaultAsync(x => x.Id == id);
 
         if (order == null)
         {
             return NotFound();
-        }
-
-        if (!ModelState.IsValid)
-        {
-            return ValidationProblem(ModelState);
         }
 
         var validation = await ValidateHeaderAsync(order.CompanyId, request.BranchId, request.CustomerId, request.SalesChannelId, request.SalesRepresentativeId);
@@ -170,22 +205,52 @@ public class SalesOrdersController : ControllerBase
         order.Status = string.IsNullOrWhiteSpace(request.Status) ? order.Status : request.Status;
         order.UpdatedAt = DateTime.UtcNow;
 
+        if (request.Lines != null)
+        {
+            if (order.Lines.Any())
+            {
+                _db.SalesOrderLines.RemoveRange(order.Lines);
+                order.Lines.Clear();
+            }
+
+            foreach (var lineRequest in request.Lines)
+            {
+                var line = new SalesOrderLine
+                {
+                    Id = Guid.NewGuid(),
+                    SalesOrderId = order.Id,
+                    ProductId = lineRequest.ProductId,
+                    Quantity = lineRequest.Quantity,
+                    UnitPrice = lineRequest.UnitPrice,
+                    CustomDescription = lineRequest.CustomDescription,
+                    LineNote = lineRequest.LineNote,
+                    CompanyId = order.CompanyId,
+                    BranchId = order.BranchId,
+                    TenantId = order.TenantId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                order.Lines.Add(line);
+            }
+        }
+
         await _db.SaveChangesAsync();
 
-        var reloaded = await _db.SalesOrders
+        var dto = await _db.SalesOrders
+            .Where(x => x.Id == order.Id)
             .Include(x => x.Lines)
-            .AsNoTracking()
-            .FirstAsync(x => x.Id == order.Id);
+            .Select(ToDtoExpression)
+            .FirstAsync();
 
-        return Ok(ToDto(reloaded));
+        return Ok(dto);
     }
 
     [HttpDelete("{id:guid}")]
-    public async Task<IActionResult> DeleteAsync(Guid companyId, Guid id)
+    public async Task<IActionResult> DeleteAsync(Guid id)
     {
         var order = await _db.SalesOrders
             .Include(x => x.Lines)
-            .FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
+            .FirstOrDefaultAsync(x => x.Id == id);
 
         if (order == null)
         {
@@ -256,33 +321,5 @@ public class SalesOrdersController : ControllerBase
         }
 
         return null;
-    }
-
-    private static SalesOrderDto ToDto(SalesOrder order)
-    {
-        var lines = order.Lines ?? Enumerable.Empty<SalesOrderLine>();
-
-        return new SalesOrderDto
-        {
-            Id = order.Id,
-            CompanyId = order.CompanyId,
-            BranchId = order.BranchId,
-            CustomerId = order.CustomerId,
-            SalesChannelId = order.SalesChannelId,
-            SalesRepresentativeId = order.SalesRepresentativeId,
-            OrderDate = order.OrderDate,
-            Status = order.Status,
-            TotalAmount = lines.Sum(l => l.Quantity * l.UnitPrice),
-            Lines = lines.Select(l => new SalesOrderLineDto
-            {
-                Id = l.Id,
-                SalesOrderId = l.SalesOrderId,
-                ProductId = l.ProductId,
-                Quantity = l.Quantity,
-                UnitPrice = l.UnitPrice,
-                CustomDescription = l.CustomDescription,
-                LineNote = l.LineNote
-            }).ToList()
-        };
     }
 }

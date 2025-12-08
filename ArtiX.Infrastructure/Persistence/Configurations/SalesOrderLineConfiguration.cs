@@ -8,30 +8,22 @@ public class SalesOrderLineConfiguration : IEntityTypeConfiguration<SalesOrderLi
 {
     public void Configure(EntityTypeBuilder<SalesOrderLine> builder)
     {
-        builder.HasKey(x => x.Id);
+        builder.ToTable("SalesOrderLines");
 
-        builder.HasOne(x => x.SalesOrder)
-            .WithMany(x => x.Lines)
-            .HasForeignKey(x => x.SalesOrderId)
+        builder.Property(l => l.Quantity)
+            .IsRequired();
+
+        builder.Property(l => l.UnitPrice)
+            .HasPrecision(18, 2);
+
+        builder.HasOne(l => l.SalesOrder)
+            .WithMany(o => o.Lines)
+            .HasForeignKey(l => l.SalesOrderId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasOne(x => x.Product)
+        builder.HasOne(l => l.Product)
             .WithMany()
-            .HasForeignKey(x => x.ProductId)
+            .HasForeignKey(l => l.ProductId)
             .OnDelete(DeleteBehavior.Restrict);
-
-        builder.Property(x => x.ProductId)
-            .IsRequired(false);
-
-        builder.Property(x => x.CustomDescription)
-            .HasColumnType("nvarchar(max)")
-            .IsRequired(false);
-
-        builder.Property(x => x.LineNote)
-            .HasColumnType("nvarchar(max)")
-            .IsRequired(false);
-
-        builder.Property(x => x.UnitPrice)
-            .HasPrecision(18, 2);
     }
 }
