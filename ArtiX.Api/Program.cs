@@ -25,7 +25,7 @@ builder.Services.AddSwaggerGen(c =>
     {
         Title = "ArtiX API",
         Version = "v1"
-    });
+    }); 
 
     var securityScheme = new OpenApiSecurityScheme
     {

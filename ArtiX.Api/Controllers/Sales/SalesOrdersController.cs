@@ -1,4 +1,4 @@
-using ArtiX.Api.Dtos.Sales;
+﻿using ArtiX.Api.Dtos.Sales;
 using ArtiX.Domain.Entities.Core;
 using ArtiX.Domain.Entities.Sales;
 using ArtiX.Infrastructure.Persistence;
@@ -10,8 +10,7 @@ namespace ArtiX.Api.Controllers.Sales;
 
 [ApiController]
 [Route("api/sales/[controller]")]
-[Authorize(Roles = "Admin")]
-[ApiExplorerSettings(GroupName = "Sales")]
+[Authorize(Roles = "Admin")] 
 public class SalesOrdersController : ControllerBase
 {
     private readonly ErpDbContext _db;
@@ -67,13 +66,29 @@ public class SalesOrdersController : ControllerBase
             return ValidationProblem(ModelState);
         }
 
-        var resolvedCompanyId = request.CompanyId == Guid.Empty ? companyId : request.CompanyId;
-        if (resolvedCompanyId != companyId)
+        // Hem query'de hem body'de companyId doluysa ve farklıysa hata ver
+        if (companyId != Guid.Empty && request.CompanyId != Guid.Empty && companyId != request.CompanyId)
         {
             return BadRequest(new { message = "CompanyId mismatch between route and payload." });
         }
 
-        var validation = await ValidateHeaderAsync(companyId, request.BranchId, request.CustomerId, request.SalesChannelId, request.SalesRepresentativeId);
+        // Tek bir effective companyId belirle
+        var effectiveCompanyId = companyId != Guid.Empty
+            ? companyId
+            : request.CompanyId;
+
+        if (effectiveCompanyId == Guid.Empty)
+        {
+            return BadRequest(new { message = "CompanyId is required." });
+        }
+
+        var validation = await ValidateHeaderAsync(
+            effectiveCompanyId,
+            request.BranchId,
+            request.CustomerId,
+            request.SalesChannelId,
+            request.SalesRepresentativeId);
+
         if (validation is ObjectResult error)
         {
             return error;
@@ -82,14 +97,15 @@ public class SalesOrdersController : ControllerBase
         var entity = new SalesOrder
         {
             Id = Guid.NewGuid(),
-            CompanyId = companyId,
+            CompanyId = effectiveCompanyId,
             BranchId = request.BranchId,
             CustomerId = request.CustomerId,
             SalesChannelId = request.SalesChannelId,
             SalesRepresentativeId = request.SalesRepresentativeId,
             OrderDate = request.OrderDate ?? DateTime.UtcNow,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "Draft" : request.Status,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
+            Lines = new List<SalesOrderLine>()   // ✅ Null olmaz
         };
 
         _db.SalesOrders.Add(entity);
@@ -120,7 +136,7 @@ public class SalesOrdersController : ControllerBase
 
         await _db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetByIdAsync), new { companyId, id = entity.Id }, ToDto(entity));
+        return CreatedAtAction(nameof(GetByIdAsync), new { companyId = effectiveCompanyId, id = entity.Id }, ToDto(entity));
     }
 
     [HttpPut("{id:guid}")]
