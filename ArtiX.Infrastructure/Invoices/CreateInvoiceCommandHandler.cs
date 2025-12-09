@@ -47,15 +47,10 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
                 ? products.FirstOrDefault(p => p.Id == lineDto.ProductId.Value)
                 : null;
 
-            var unitPrice = product?.RetailPrice ?? 0m;
+            var unitPrice = lineDto.UnitPrice ?? product?.RetailPrice ?? 0m;
             var taxRate = product?.TaxRate ?? 0m;
             var quantity = lineDto.Quantity;
-
-            var lineSubtotal = quantity * unitPrice;
-            var discountAmount = (lineDto.DiscountRate / 100m) * lineSubtotal;
-            var lineTotal = lineSubtotal - discountAmount;
-            var taxAmount = (taxRate / 100m) * lineTotal;
-            var lineTotalWithTax = lineTotal + taxAmount;
+            var isTaxInclusive = product?.IsTaxInclusive ?? false;
 
             var line = new InvoiceLine
             {
@@ -68,17 +63,15 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
                 ProductName = product?.Name,
                 Quantity = quantity,
                 UnitPrice = unitPrice,
+                IsTaxInclusive = isTaxInclusive,
                 DiscountRate = lineDto.DiscountRate,
-                DiscountAmount = discountAmount,
-                LineSubtotal = lineSubtotal,
-                LineTotal = lineTotal,
                 TaxRate = taxRate,
-                TaxAmount = taxAmount,
-                LineTotalWithTax = lineTotalWithTax,
                 CustomDescription = lineDto.CustomDescription,
                 LineNote = lineDto.LineNote,
                 CreatedAt = DateTime.UtcNow
             };
+
+            RecalculateLine(line);
 
             invoice.Lines.Add(line);
         }
@@ -92,5 +85,43 @@ public class CreateInvoiceCommandHandler : IRequestHandler<CreateInvoiceCommand,
         await _dbContext.SaveChangesAsync(cancellationToken);
 
         return invoice.Id;
+    }
+
+    private static void RecalculateLine(InvoiceLine line)
+    {
+        if (!line.IsTaxInclusive)
+        {
+            line.LineSubtotal = line.Quantity * line.UnitPrice;
+            line.DiscountAmount = (line.DiscountRate / 100m) * line.LineSubtotal;
+            line.LineTotal = line.LineSubtotal - line.DiscountAmount;
+
+            line.TaxAmount = (line.TaxRate / 100m) * line.LineTotal;
+            line.LineTotalWithTax = line.LineTotal + line.TaxAmount;
+        }
+        else
+        {
+            var grossTotal = line.Quantity * line.UnitPrice;
+            line.DiscountAmount = (line.DiscountRate / 100m) * grossTotal;
+            var grossAfterDiscount = grossTotal - line.DiscountAmount;
+
+            if (line.TaxRate > 0)
+            {
+                var divisor = 1 + (line.TaxRate / 100m);
+                var netAmount = grossAfterDiscount / divisor;
+
+                line.LineSubtotal = netAmount;
+                line.LineTotal = netAmount;
+
+                line.TaxAmount = grossAfterDiscount - netAmount;
+                line.LineTotalWithTax = grossAfterDiscount;
+            }
+            else
+            {
+                line.LineSubtotal = grossAfterDiscount;
+                line.LineTotal = grossAfterDiscount;
+                line.TaxAmount = 0m;
+                line.LineTotalWithTax = grossAfterDiscount;
+            }
+        }
     }
 }

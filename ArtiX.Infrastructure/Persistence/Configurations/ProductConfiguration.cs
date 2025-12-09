@@ -26,6 +26,10 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.TaxRate)
             .HasPrecision(5, 2);
 
+        builder.Property(p => p.IsTaxInclusive)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.HasOne(p => p.Company)
             .WithMany()
             .HasForeignKey(p => p.CompanyId)

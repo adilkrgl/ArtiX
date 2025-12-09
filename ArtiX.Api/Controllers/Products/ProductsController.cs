@@ -36,6 +36,7 @@ public class ProductsController : ControllerBase
         RetailPrice = p.RetailPrice,
         WholesalePrice = p.WholesalePrice,
         TaxRate =p.TaxRate,
+        IsTaxInclusive = p.IsTaxInclusive,
         IsActive = p.IsActive,
         Manufacturer = p.Manufacturer == null
             ? null
@@ -172,6 +173,7 @@ public class ProductsController : ControllerBase
             RetailPrice = request.RetailPrice,
             WholesalePrice = request.WholesalePrice,
             TaxRate = request.TaxRate,
+            IsTaxInclusive = request.IsTaxInclusive ?? false,
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow
         };
@@ -237,6 +239,10 @@ public class ProductsController : ControllerBase
         product.RetailPrice = request.RetailPrice;
         product.WholesalePrice = request.WholesalePrice;
         product.TaxRate = request.TaxRate;
+        if (request.IsTaxInclusive.HasValue)
+        {
+            product.IsTaxInclusive = request.IsTaxInclusive.Value;
+        }
         product.IsActive = request.IsActive;
         product.UpdatedAt = DateTime.UtcNow;
 
@@ -278,6 +284,7 @@ public class ProductsController : ControllerBase
         RetailPrice = entity.RetailPrice,
         WholesalePrice = entity.WholesalePrice,
         TaxRate=entity.TaxRate,
+        IsTaxInclusive = entity.IsTaxInclusive,
         IsActive = entity.IsActive,
         Manufacturer = entity.Manufacturer is null ? null : new ManufacturerDto
         {

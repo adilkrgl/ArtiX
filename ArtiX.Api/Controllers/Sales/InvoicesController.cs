@@ -87,6 +87,7 @@ public class InvoicesController : ControllerBase
             Lines = (request.Lines ?? new List<CreateInvoiceLineRequest>()).Select(l => new CreateInvoiceLineDto
             {
                 ProductId = l.ProductId,
+                UnitPrice = l.UnitPrice,
                 Quantity = l.Quantity,
                 DiscountRate = l.DiscountRate,
                 CustomDescription = l.CustomDescription,
@@ -204,6 +205,7 @@ public class InvoicesController : ControllerBase
                 ProductName = l.ProductName,
                 Quantity = l.Quantity,
                 UnitPrice = l.UnitPrice,
+                IsTaxInclusive = l.IsTaxInclusive,
                 DiscountRate = l.DiscountRate,
                 DiscountAmount = l.DiscountAmount,
                 LineSubtotal = l.LineSubtotal,

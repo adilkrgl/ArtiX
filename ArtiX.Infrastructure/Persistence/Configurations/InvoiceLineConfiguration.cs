@@ -45,6 +45,10 @@ public class InvoiceLineConfiguration : IEntityTypeConfiguration<InvoiceLine>
         builder.Property(x => x.UnitPrice)
             .HasPrecision(18, 2);
 
+        builder.Property(x => x.IsTaxInclusive)
+            .IsRequired()
+            .HasDefaultValue(false);
+
         builder.Property(x => x.DiscountRate)
             .HasPrecision(5, 2);
 

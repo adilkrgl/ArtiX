@@ -34,6 +34,7 @@ public class InvoiceLineDto
     public string? LineNote { get; set; }
     public decimal Quantity { get; set; }
     public decimal UnitPrice { get; set; }
+    public bool IsTaxInclusive { get; set; }
     public decimal DiscountRate { get; set; }
     public decimal DiscountAmount { get; set; }
     public decimal LineSubtotal { get; set; }
@@ -84,6 +85,7 @@ public class UpdateSalesOrderLineRequest
 public class CreateInvoiceLineRequest
 {
     public Guid? ProductId { get; set; }
+    public decimal? UnitPrice { get; set; }
     public decimal Quantity { get; set; }
     public decimal DiscountRate { get; set; }
     public string? CustomDescription { get; set; }
@@ -93,6 +95,7 @@ public class CreateInvoiceLineRequest
 public class UpdateInvoiceLineRequest
 {
     public Guid? ProductId { get; set; }
+    public decimal? UnitPrice { get; set; }
     public decimal Quantity { get; set; }
     public decimal DiscountRate { get; set; }
     public string? CustomDescription { get; set; }
