@@ -172,11 +172,13 @@ public class SalesOrdersController : ControllerBase
         await _db.SaveChangesAsync();
 
 
+        var dto = ToDto(entity);
+
         //return CreatedAtAction(
-        //    nameof(GetByIdAsync),
-        //    "SalesOrders",
-        //    new { id = entity.Id },
-        //    ToDto(entity));
+        //    nameof(GetByIdAsync),   // aynı controller içindeki [HttpGet("{id:guid}")]
+        //    new { id = entity.Id }, // route values
+        //    dto                     // response body
+        //);
 
         return Created($"/api/sales/SalesOrders/{entity.Id}", ToDto(entity));
 
