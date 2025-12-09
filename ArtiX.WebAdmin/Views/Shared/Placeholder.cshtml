@@ -1,0 +1,23 @@
+@model ArtiX.WebAdmin.Models.ModulePageViewModel
+@{
+    ViewData["Title"] ??= Model.Title;
+}
+
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <div>
+            <h5 class="mb-1">@Model.Title</h5>
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <p class="mb-0 text-muted">@Model.Description</p>
+            }
+            else
+            {
+                <p class="mb-0 text-muted">Content from ArtiX.Api will appear here.</p>
+            }
+        </div>
+    </div>
+    <div class="card-body">
+        <p class="mb-0">This is a placeholder page wired to the Vuexy layout. Replace this content with live data once the API integration is complete.</p>
+    </div>
+</div>

@@ -12,6 +12,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ArtiX.Api", "ArtiX.Api\Arti
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ArtiX.Application.Tests", "ArtiX.Application.Tests\ArtiX.Application.Tests.csproj", "{9A7863C0-5B2A-4394-8079-6904ADF11EA7}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ArtiX.WebAdmin", "ArtiX.WebAdmin\\ArtiX.WebAdmin.csproj", "{44E43148-DFD1-4E1C-B037-E6F4DF8E1055}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -38,6 +40,10 @@ Global
 		{9A7863C0-5B2A-4394-8079-6904ADF11EA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9A7863C0-5B2A-4394-8079-6904ADF11EA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9A7863C0-5B2A-4394-8079-6904ADF11EA7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44E43148-DFD1-4E1C-B037-E6F4DF8E1055}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44E43148-DFD1-4E1C-B037-E6F4DF8E1055}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44E43148-DFD1-4E1C-B037-E6F4DF8E1055}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44E43148-DFD1-4E1C-B037-E6F4DF8E1055}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

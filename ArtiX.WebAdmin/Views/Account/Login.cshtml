@@ -1,0 +1,68 @@
+@model ArtiX.WebAdmin.Models.Auth.LoginViewModel
+@* TEMPLATE-BASED VIEW (Vuexy).
+   Do NOT change layout structure or CSS classes.
+   Only adjust models, bindings and texts for ArtiX. *@
+@{
+    Layout = null;
+    ViewData["Title"] = "Sign in";
+}
+<!DOCTYPE html>
+<html lang="en" class="light-style layout-navbar-fixed">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>@ViewData["Title"] - ArtiX Web Admin</title>
+    <link rel="icon" type="image/x-icon" href="/vuexy/img/favicon.ico" />
+    @await Html.PartialAsync("~/Views/Shared/Sections/Navbar/_Variables.cshtml")
+    @await Html.PartialAsync("~/Views/Shared/Sections/Navbar/_Styles.cshtml")
+</head>
+<body>
+    <div class="authentication-wrapper authentication-basic container-p-y">
+        <div class="authentication-inner py-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="app-brand mb-4">
+                        <a asp-controller="Dashboard" asp-action="Index" class="app-brand-link gap-2">
+                            <span class="app-brand-logo"><i class="bx bx-aperture"></i></span>
+                            <span class="app-brand-text demo text-body fw-bold">ArtiX</span>
+                        </a>
+                    </div>
+                    <h4 class="mb-1">Welcome back</h4>
+                    <p class="mb-4">Please sign in to continue to the admin area.</p>
+
+                    <form asp-controller="Account" asp-action="Login" method="post" class="mb-3">
+                        @Html.AntiForgeryToken()
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" autocomplete="email" placeholder="Enter your email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3 form-password-toggle">
+                            <label asp-for="Password" class="form-label"></label>
+                            <div class="input-group input-group-merge">
+                                <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="··········" />
+                                <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3 d-flex justify-content-between">
+                            <div class="form-check">
+                                <input asp-for="RememberMe" class="form-check-input" />
+                                <label asp-for="RememberMe" class="form-check-label"></label>
+                            </div>
+                            <a asp-controller="Account" asp-action="Register" class="text-primary">Create account</a>
+                        </div>
+                        <div class="mb-3">
+                            <button type="submit" class="btn btn-primary d-grid w-100">Sign in</button>
+                        </div>
+                        <div asp-validation-summary="All" class="text-danger"></div>
+                    </form>
+
+                    <p class="text-center mb-0">Access is restricted to authorised ArtiX administrators.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    @await Html.PartialAsync("~/Views/Shared/Sections/Navbar/_Scripts.cshtml")
+</body>
+</html>
