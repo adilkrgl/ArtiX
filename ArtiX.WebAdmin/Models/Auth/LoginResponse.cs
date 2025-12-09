@@ -1,4 +1,4 @@
-namespace ArtiX.WebAdmin.Models;
+namespace ArtiX.WebAdmin.Models.Auth;
 
 public class LoginResponse
 {

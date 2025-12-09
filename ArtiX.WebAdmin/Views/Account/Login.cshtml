@@ -1,4 +1,7 @@
-@model ArtiX.WebAdmin.Models.LoginViewModel
+@model ArtiX.WebAdmin.Models.Auth.LoginViewModel
+@* TEMPLATE-BASED VIEW (Vuexy).
+   Do NOT change layout structure or CSS classes.
+   Only adjust models, bindings and texts for ArtiX. *@
 @{
     Layout = null;
     ViewData["Title"] = "Sign in";
@@ -19,7 +22,7 @@
             <div class="card">
                 <div class="card-body">
                     <div class="app-brand mb-4">
-                        <a href="/" class="app-brand-link gap-2">
+                        <a asp-controller="Dashboard" asp-action="Index" class="app-brand-link gap-2">
                             <span class="app-brand-logo"><i class="bx bx-aperture"></i></span>
                             <span class="app-brand-text demo text-body fw-bold">ArtiX</span>
                         </a>
@@ -27,17 +30,17 @@
                     <h4 class="mb-1">Welcome back</h4>
                     <p class="mb-4">Please sign in to continue to the admin area.</p>
 
-                    <form asp-action="Login" method="post" class="mb-3">
+                    <form asp-controller="Account" asp-action="Login" method="post" class="mb-3">
                         @Html.AntiForgeryToken()
                         <div class="mb-3">
-                            <label asp-for="Username" class="form-label"></label>
-                            <input asp-for="Username" class="form-control" autocomplete="username" placeholder="Enter your user name" />
-                            <span asp-validation-for="Username" class="text-danger"></span>
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" autocomplete="email" placeholder="Enter your email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
                         </div>
                         <div class="mb-3 form-password-toggle">
                             <label asp-for="Password" class="form-label"></label>
                             <div class="input-group input-group-merge">
-                                <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="············" />
+                                <input asp-for="Password" class="form-control" autocomplete="current-password" placeholder="··········" />
                                 <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
                             </div>
                             <span asp-validation-for="Password" class="text-danger"></span>
@@ -47,7 +50,7 @@
                                 <input asp-for="RememberMe" class="form-check-input" />
                                 <label asp-for="RememberMe" class="form-check-label"></label>
                             </div>
-                            <a href="#" class="text-primary">Forgot password?</a>
+                            <a asp-controller="Account" asp-action="Register" class="text-primary">Create account</a>
                         </div>
                         <div class="mb-3">
                             <button type="submit" class="btn btn-primary d-grid w-100">Sign in</button>

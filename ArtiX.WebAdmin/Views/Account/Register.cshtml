@@ -1,0 +1,94 @@
+@model ArtiX.WebAdmin.Models.Auth.RegisterViewModel
+@* TEMPLATE-BASED VIEW (Vuexy).
+   Do NOT change layout structure or CSS classes.
+   Only adjust models, bindings and texts for ArtiX. *@
+@{
+    Layout = null;
+    ViewData["Title"] = "Create account";
+}
+<!DOCTYPE html>
+<html lang="en" class="light-style layout-navbar-fixed">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    <title>@ViewData["Title"] - ArtiX Web Admin</title>
+    <link rel="icon" type="image/x-icon" href="/vuexy/img/favicon.ico" />
+    @await Html.PartialAsync("~/Views/Shared/Sections/Navbar/_Variables.cshtml")
+    @await Html.PartialAsync("~/Views/Shared/Sections/Navbar/_Styles.cshtml")
+</head>
+<body>
+    <div class="authentication-wrapper authentication-basic container-p-y">
+        <div class="authentication-inner py-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="app-brand mb-4">
+                        <a asp-controller="Dashboard" asp-action="Index" class="app-brand-link gap-2">
+                            <span class="app-brand-logo"><i class="bx bx-aperture"></i></span>
+                            <span class="app-brand-text demo text-body fw-bold">ArtiX</span>
+                        </a>
+                    </div>
+                    <h4 class="mb-1">Create your account</h4>
+                    <p class="mb-4">Start managing ArtiX with a new administrator profile.</p>
+
+                    <form asp-controller="Account" asp-action="Register" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="mb-3">
+                                    <label asp-for="FirstName" class="form-label"></label>
+                                    <input asp-for="FirstName" class="form-control" autocomplete="given-name" placeholder="Enter your first name" />
+                                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="mb-3">
+                                    <label asp-for="LastName" class="form-label"></label>
+                                    <input asp-for="LastName" class="form-control" autocomplete="family-name" placeholder="Enter your last name" />
+                                    <span asp-validation-for="LastName" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label"></label>
+                            <input asp-for="Email" class="form-control" autocomplete="email" placeholder="Enter your email" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3">
+                            <label asp-for="PhoneNumber" class="form-label"></label>
+                            <input asp-for="PhoneNumber" class="form-control" autocomplete="tel" placeholder="Enter your phone number" />
+                            <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3 form-password-toggle">
+                            <label asp-for="Password" class="form-label"></label>
+                            <div class="input-group input-group-merge">
+                                <input asp-for="Password" class="form-control" autocomplete="new-password" placeholder="··········" />
+                                <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
+                            </div>
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+                        <div class="mb-3 form-password-toggle">
+                            <label asp-for="ConfirmPassword" class="form-label"></label>
+                            <div class="input-group input-group-merge">
+                                <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" placeholder="··········" />
+                                <span class="input-group-text cursor-pointer"><i class="bx bx-hide"></i></span>
+                            </div>
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <button class="btn btn-primary d-grid w-100" type="submit">Register</button>
+                        </div>
+                        <div asp-validation-summary="All" class="text-danger"></div>
+                    </form>
+
+                    <p class="text-center">
+                        <span>Already registered?</span>
+                        <a asp-controller="Account" asp-action="Login" class="ms-1"><span>Sign in instead</span></a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    @await Html.PartialAsync("~/Views/Shared/Sections/Navbar/_Scripts.cshtml")
+</body>
+</html>

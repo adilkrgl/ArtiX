@@ -18,7 +18,7 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddSingleton<ApiAuthenticationDelegatingHandler>();
 
-builder.Services.AddHttpClient("ApiClient", (sp, client) =>
+builder.Services.AddHttpClient("ArtiXApi", (sp, client) =>
 {
     var configuration = sp.GetRequiredService<IConfiguration>();
     var baseUrl = configuration.GetValue<string>("ApiBaseUrl");
@@ -57,6 +57,8 @@ builder.Services.AddHttpClient<IInvoiceApiClient, InvoiceApiClient>((sp, client)
         client.BaseAddress = new Uri(baseUrl);
     }
 }).AddHttpMessageHandler<ApiAuthenticationDelegatingHandler>();
+
+// TODO: register additional typed API client services to interact with ArtiX.Api for other modules.
 
 var app = builder.Build();
 

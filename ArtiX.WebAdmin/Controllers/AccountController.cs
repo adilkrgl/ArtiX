@@ -1,6 +1,6 @@
 using System.Net.Http.Json;
 using System.Security.Claims;
-using ArtiX.WebAdmin.Models;
+using ArtiX.WebAdmin.Models.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +11,7 @@ namespace ArtiX.WebAdmin.Controllers;
 [AllowAnonymous]
 public class AccountController : Controller
 {
+    private const string ApiClientName = "ArtiXApi";
     private readonly IHttpClientFactory _httpClientFactory;
 
     public AccountController(IHttpClientFactory httpClientFactory)
@@ -36,10 +37,10 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var client = _httpClientFactory.CreateClient("ApiClient");
+        var client = _httpClientFactory.CreateClient(ApiClientName);
         var response = await client.PostAsJsonAsync("/auth/login", new
         {
-            username = model.Username,
+            email = model.Email,
             password = model.Password
         });
 
@@ -50,7 +51,7 @@ public class AccountController : Controller
             {
                 var claims = new List<Claim>
                 {
-                    new(ClaimTypes.Name, model.Username),
+                    new(ClaimTypes.Name, model.Email),
                     new("access_token", content.Token)
                 };
 
@@ -75,6 +76,44 @@ public class AccountController : Controller
         }
 
         ModelState.AddModelError(string.Empty, "Invalid credentials or the authentication service is unavailable.");
+        return View(model);
+    }
+
+    [HttpGet]
+    public IActionResult Register()
+    {
+        ViewData["Title"] = "Create account";
+        return View(new RegisterViewModel());
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(RegisterViewModel model)
+    {
+        if (!ModelState.IsValid)
+        {
+            return View(model);
+        }
+
+        var client = _httpClientFactory.CreateClient(ApiClientName);
+        var response = await client.PostAsJsonAsync("/auth/register", new
+        {
+            firstName = model.FirstName,
+            lastName = model.LastName,
+            email = model.Email,
+            phoneNumber = model.PhoneNumber,
+            password = model.Password,
+            confirmPassword = model.ConfirmPassword
+            // TODO: include additional fields required by ArtiX.Api (e.g. company/role/branch identifiers).
+        });
+
+        if (response.IsSuccessStatusCode)
+        {
+            // Optionally sign in immediately after registration using the login endpoint
+            return RedirectToAction(nameof(Login));
+        }
+
+        ModelState.AddModelError(string.Empty, "Registration failed or the service is unavailable. Please try again.");
         return View(model);
     }
 

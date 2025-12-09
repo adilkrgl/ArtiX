@@ -1,12 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace ArtiX.WebAdmin.Models;
+namespace ArtiX.WebAdmin.Models.Auth;
 
 public class LoginViewModel
 {
     [Required]
-    [Display(Name = "User name")]
-    public string Username { get; set; } = string.Empty;
+    [EmailAddress]
+    [Display(Name = "Email address")]
+    public string Email { get; set; } = string.Empty;
 
     [Required]
     [DataType(DataType.Password)]
