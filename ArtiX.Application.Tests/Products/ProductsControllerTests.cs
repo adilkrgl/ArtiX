@@ -1,5 +1,5 @@
 using ArtiX.Api.Controllers.Products;
-using ArtiX.Api.Dtos.Products;
+using ArtiX.Api.Dtos.Products; 
 using ArtiX.Application.Tests.Common;
 using ArtiX.Domain.Entities.Core;
 using ArtiX.Domain.Entities.Products;
@@ -7,6 +7,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Xunit;
+
 
 namespace ArtiX.Application.Tests.Products;
 
@@ -52,8 +53,8 @@ public class ProductsControllerTests
 
         var result = await controller.Create(request);
 
-        var created = Assert.IsType<CreatedAtActionResult>(result.Result);
-        var dto = Assert.IsType<ProductDto>(created.Value);
+        var created = Assert.IsType<CreatedAtActionResult>(result.Result); // Declare 'created' before using it
+        var dto = Assert.IsType<Api.Dtos.Products.ProductDto>(created.Value); // Use 'created' after declaration
 
         dto.Name.Should().Be("Widget");
         dto.ManufacturerId.Should().Be(manufacturerId);
@@ -106,7 +107,7 @@ public class ProductsControllerTests
         var response = await controller.Update(productId, request);
 
         var okResult = Assert.IsType<OkObjectResult>(response.Result);
-        var dto = Assert.IsType<ProductDto>(okResult.Value);
+        var dto = Assert.IsType<Api.Dtos.Products.ProductDto>(okResult.Value);
 
         dto.CostPrice.Should().Be(6m);
         dto.RetailPrice.Should().Be(9m);
@@ -146,7 +147,8 @@ public class ProductsControllerTests
 
         var controller = new ManufacturersController(context);
 
-        var createRequest = new CreateManufacturerRequest
+        // Update the namespace of the `CreateManufacturerRequest` to match the expected type
+        var createRequest = new ArtiX.Api.Dtos.Products.CreateManufacturerRequest
         {
             CompanyId = companyId,
             BranchId = branchId,
@@ -161,7 +163,8 @@ public class ProductsControllerTests
         var created = Assert.IsType<CreatedAtActionResult>(createResult.Result);
         var createdDto = Assert.IsType<ManufacturerDto>(created.Value);
 
-        var updateRequest = new UpdateManufacturerRequest
+        // Update the type of `updateRequest` to match the expected type
+        var updateRequest = new ArtiX.Api.Dtos.Products.UpdateManufacturerRequest
         {
             BranchId = branchId,
             Name = "Maker Updated",

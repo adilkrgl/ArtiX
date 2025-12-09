@@ -17,6 +17,7 @@ public class ProductDto
     public decimal CostPrice { get; set; }
     public decimal RetailPrice { get; set; }
     public decimal WholesalePrice { get; set; }
+    public decimal TaxRate { get; set; }
     public bool IsActive { get; set; }
 
     public ManufacturerDto? Manufacturer { get; set; }
@@ -34,6 +35,7 @@ public class CreateProductRequest
     public decimal CostPrice { get; set; }
     public decimal RetailPrice { get; set; }
     public decimal WholesalePrice { get; set; }
+    public decimal TaxRate { get; set; }
     public bool IsActive { get; set; } = true;
 }
 
@@ -48,5 +50,6 @@ public class UpdateProductRequest
     public decimal CostPrice { get; set; }
     public decimal RetailPrice { get; set; }
     public decimal WholesalePrice { get; set; }
+    public decimal TaxRate { get; set; }
     public bool IsActive { get; set; }
 }

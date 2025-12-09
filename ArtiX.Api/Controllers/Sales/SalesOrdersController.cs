@@ -95,22 +95,22 @@ public class SalesOrdersController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<SalesOrderDto>> CreateAsync([FromBody] CreateSalesOrderRequest request)
+    public async Task<ActionResult<SalesOrderDto>> CreateAsync(
+      [FromQuery] Guid? companyId,
+      [FromBody] CreateSalesOrderRequest request)
     {
         if (!ModelState.IsValid)
         {
             return ValidationProblem(ModelState);
         }
 
-        // Hem query'de hem body'de companyId doluysa ve farklıysa hata ver
-        if (companyId != Guid.Empty && request.CompanyId != Guid.Empty && companyId != request.CompanyId)
+        if (companyId.HasValue && request.CompanyId != Guid.Empty && companyId.Value != request.CompanyId)
         {
             return BadRequest(new { message = "CompanyId mismatch between route and payload." });
         }
 
-        // Tek bir effective companyId belirle
-        var effectiveCompanyId = companyId != Guid.Empty
-            ? companyId
+        var effectiveCompanyId = companyId.HasValue && companyId.Value != Guid.Empty
+            ? companyId.Value
             : request.CompanyId;
 
         if (effectiveCompanyId == Guid.Empty)
@@ -141,7 +141,7 @@ public class SalesOrdersController : ControllerBase
             OrderDate = request.OrderDate ?? DateTime.UtcNow,
             Status = string.IsNullOrWhiteSpace(request.Status) ? "Draft" : request.Status,
             CreatedAt = DateTime.UtcNow,
-            Lines = new List<SalesOrderLine>()   // ✅ Null olmaz
+            Lines = new List<SalesOrderLine>()
         };
 
         if (request.Lines != null && request.Lines.Any())
@@ -171,8 +171,17 @@ public class SalesOrdersController : ControllerBase
         _db.SalesOrders.Add(entity);
         await _db.SaveChangesAsync();
 
-        return CreatedAtAction(nameof(GetByIdAsync), new { companyId = effectiveCompanyId, id = entity.Id }, ToDto(entity));
+
+        //return CreatedAtAction(
+        //    nameof(GetByIdAsync),
+        //    "SalesOrders",
+        //    new { id = entity.Id },
+        //    ToDto(entity));
+
+        return Created($"/api/sales/SalesOrders/{entity.Id}", ToDto(entity));
+
     }
+
 
     [HttpPut("{id:guid}")]
     public async Task<ActionResult<SalesOrderDto>> UpdateAsync(Guid id, [FromBody] UpdateSalesOrderRequest request)

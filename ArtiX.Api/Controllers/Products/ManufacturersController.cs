@@ -15,8 +15,7 @@ namespace ArtiX.Api.Controllers.Products;
 
 [ApiController]
 [Route("api/products/[controller]")]
-[Authorize(Roles = "Admin")]
-[ApiExplorerSettings(GroupName = "Products")]
+[Authorize(Roles = "Admin")] 
 public class ManufacturersController : ControllerBase
 {
     private readonly ErpDbContext _db;

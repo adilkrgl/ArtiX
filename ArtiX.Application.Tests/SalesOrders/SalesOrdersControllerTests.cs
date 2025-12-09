@@ -42,7 +42,7 @@ public class SalesOrdersControllerTests
             }
         };
 
-        var result = await controller.CreateAsync(request);
+        var result = await controller.CreateAsync(seed.CompanyId, request);
 
         var created = result.Result as CreatedAtActionResult;
         created.Should().NotBeNull();
