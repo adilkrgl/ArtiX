@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Threading.Tasks;
 using ArtiX.Api.Dtos.Products;
+using ArtiX.Application.Products;
 using ArtiX.Domain.Entities.Core;
 using ArtiX.Domain.Entities.Products;
 using ArtiX.Infrastructure.Persistence;
@@ -14,7 +16,8 @@ namespace ArtiX.Api.Controllers.Products;
 
 [ApiController]
 [Route("api/products/[controller]")]
-[Authorize(Roles = "Admin")] 
+[Authorize(Roles = "Admin")]
+[ApiExplorerSettings(GroupName = "Products")]
 public class ManufacturersController : ControllerBase
 {
     private readonly ErpDbContext _db;
@@ -41,7 +44,7 @@ public class ManufacturersController : ControllerBase
 
         var results = await query
             .OrderBy(m => m.Name)
-            .Select(m => ToDto(m))
+            .Select(ToDtoExpression)
             .ToListAsync();
 
         return Ok(results);
@@ -159,13 +162,19 @@ public class ManufacturersController : ControllerBase
             return NotFound();
         }
 
+        var hasProducts = await _db.Products.AnyAsync(p => p.ManufacturerId == id);
+        if (hasProducts)
+        {
+            return BadRequest(new { message = "Cannot delete manufacturer with associated products." });
+        }
+
         _db.Manufacturers.Remove(manufacturer);
         await _db.SaveChangesAsync();
 
         return NoContent();
     }
 
-    private static ManufacturerDto ToDto(Manufacturer entity) => new()
+    private static readonly Expression<Func<Manufacturer, ManufacturerDto>> ToDtoExpression = entity => new ManufacturerDto
     {
         Id = entity.Id,
         CompanyId = entity.CompanyId,
@@ -178,4 +187,6 @@ public class ManufacturersController : ControllerBase
         Website = entity.Website,
         ContactPerson = entity.ContactPerson
     };
+
+    private static ManufacturerDto ToDto(Manufacturer entity) => ToDtoExpression.Compile().Invoke(entity);
 }

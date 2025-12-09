@@ -22,7 +22,10 @@ public class SalesOrderLinesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<List<SalesOrderLineDto>>> GetAsync([FromQuery] Guid? salesOrderId, [FromQuery] Guid? companyId, [FromQuery] Guid? branchId)
+    public async Task<ActionResult<List<SalesOrderLineDto>>> GetAsync(
+        [FromQuery] Guid? salesOrderId,
+        [FromQuery] Guid? companyId,
+        [FromQuery] Guid? branchId)
     {
         var query = _db.SalesOrderLines.AsQueryable();
 
@@ -136,6 +139,7 @@ public class SalesOrderLinesController : ControllerBase
 
         line.Quantity = request.Quantity;
         line.UnitPrice = request.UnitPrice;
+        line.ProductId = request.ProductId;
         line.CustomDescription = request.CustomDescription;
         line.LineNote = request.LineNote;
         line.UpdatedAt = DateTime.UtcNow;

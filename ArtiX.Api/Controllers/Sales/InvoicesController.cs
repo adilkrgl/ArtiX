@@ -88,6 +88,7 @@ public class InvoicesController : ControllerBase
             {
                 ProductId = l.ProductId,
                 Quantity = l.Quantity,
+                UnitPrice = l.UnitPrice,
                 DiscountRate = l.DiscountRate,
                 CustomDescription = l.CustomDescription,
                 LineNote = l.LineNote
@@ -206,6 +207,7 @@ public class InvoicesController : ControllerBase
                 UnitPrice = l.UnitPrice,
                 DiscountRate = l.DiscountRate,
                 DiscountAmount = l.DiscountAmount,
+                IsTaxInclusive = l.IsTaxInclusive,
                 LineSubtotal = l.LineSubtotal,
                 LineTotal = l.LineTotal,
                 TaxRate = l.TaxRate,

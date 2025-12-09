@@ -51,6 +51,9 @@ public class InvoiceLineConfiguration : IEntityTypeConfiguration<InvoiceLine>
         builder.Property(x => x.DiscountAmount)
             .HasPrecision(18, 2);
 
+        builder.Property(x => x.IsTaxInclusive)
+            .HasDefaultValue(false);
+
         builder.Property(x => x.LineSubtotal)
             .HasPrecision(18, 2);
 

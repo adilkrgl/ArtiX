@@ -41,6 +41,7 @@ public class InvoiceLinesController : ControllerBase
                 UnitPrice = x.UnitPrice,
                 DiscountRate = x.DiscountRate,
                 DiscountAmount = x.DiscountAmount,
+                IsTaxInclusive = x.IsTaxInclusive,
                 LineSubtotal = x.LineSubtotal,
                 LineTotal = x.LineTotal,
                 TaxRate = x.TaxRate,
@@ -69,6 +70,7 @@ public class InvoiceLinesController : ControllerBase
                 UnitPrice = x.UnitPrice,
                 DiscountRate = x.DiscountRate,
                 DiscountAmount = x.DiscountAmount,
+                IsTaxInclusive = x.IsTaxInclusive,
                 LineSubtotal = x.LineSubtotal,
                 LineTotal = x.LineTotal,
                 TaxRate = x.TaxRate,
@@ -111,8 +113,9 @@ public class InvoiceLinesController : ControllerBase
             product = await _db.Products.FirstOrDefaultAsync(p => p.Id == request.ProductId.Value);
         }
 
-        var unitPrice = product?.RetailPrice ?? 0m;
+        var unitPrice = request.UnitPrice ?? product?.RetailPrice ?? 0m;
         var taxRate = product?.TaxRate ?? 0m;
+        var isTaxInclusive = product?.IsTaxInclusive ?? false;
 
         var line = new InvoiceLine
         {
@@ -125,6 +128,7 @@ public class InvoiceLinesController : ControllerBase
             ProductName = product?.Name,
             Quantity = request.Quantity,
             UnitPrice = unitPrice,
+            IsTaxInclusive = isTaxInclusive,
             DiscountRate = request.DiscountRate,
             TaxRate = taxRate,
             CustomDescription = request.CustomDescription,
@@ -173,9 +177,17 @@ public class InvoiceLinesController : ControllerBase
         line.ProductSku = product?.Sku;
         line.ProductName = product?.Name;
         line.Quantity = request.Quantity;
-        line.UnitPrice = product?.RetailPrice ?? 0m;
+        if (request.UnitPrice.HasValue)
+        {
+            line.UnitPrice = request.UnitPrice.Value;
+        }
+        else if (product != null)
+        {
+            line.UnitPrice = product.RetailPrice;
+        }
         line.DiscountRate = request.DiscountRate;
-        line.TaxRate = product?.TaxRate ?? 0m;
+        line.IsTaxInclusive = product?.IsTaxInclusive ?? line.IsTaxInclusive;
+        line.TaxRate = product?.TaxRate ?? line.TaxRate;
         line.CustomDescription = request.CustomDescription;
         line.LineNote = request.LineNote;
         line.UpdatedAt = DateTime.UtcNow;
@@ -243,11 +255,39 @@ public class InvoiceLinesController : ControllerBase
 
     private static void RecalculateLine(InvoiceLine line)
     {
-        line.LineSubtotal = line.Quantity * line.UnitPrice;
-        line.DiscountAmount = (line.DiscountRate / 100m) * line.LineSubtotal;
-        line.LineTotal = line.LineSubtotal - line.DiscountAmount;
-        line.TaxAmount = (line.TaxRate / 100m) * line.LineTotal;
-        line.LineTotalWithTax = line.LineTotal + line.TaxAmount;
+        if (!line.IsTaxInclusive)
+        {
+            line.LineSubtotal = line.Quantity * line.UnitPrice;
+            line.DiscountAmount = (line.DiscountRate / 100m) * line.LineSubtotal;
+            line.LineTotal = line.LineSubtotal - line.DiscountAmount;
+            line.TaxAmount = (line.TaxRate / 100m) * line.LineTotal;
+            line.LineTotalWithTax = line.LineTotal + line.TaxAmount;
+        }
+        else
+        {
+            var grossTotal = line.Quantity * line.UnitPrice;
+            line.DiscountAmount = (line.DiscountRate / 100m) * grossTotal;
+            var grossAfterDiscount = grossTotal - line.DiscountAmount;
+
+            if (line.TaxRate > 0)
+            {
+                var divisor = 1 + (line.TaxRate / 100m);
+                var netAmount = grossAfterDiscount / divisor;
+
+                line.LineSubtotal = netAmount;
+                line.LineTotal = netAmount;
+
+                line.TaxAmount = grossAfterDiscount - netAmount;
+                line.LineTotalWithTax = grossAfterDiscount;
+            }
+            else
+            {
+                line.LineSubtotal = grossAfterDiscount;
+                line.LineTotal = grossAfterDiscount;
+                line.TaxAmount = 0m;
+                line.LineTotalWithTax = grossAfterDiscount;
+            }
+        }
     }
 
     private static void RecalculateInvoiceTotals(Invoice invoice)
@@ -269,6 +309,7 @@ public class InvoiceLinesController : ControllerBase
         UnitPrice = line.UnitPrice,
         DiscountRate = line.DiscountRate,
         DiscountAmount = line.DiscountAmount,
+        IsTaxInclusive = line.IsTaxInclusive,
         LineSubtotal = line.LineSubtotal,
         LineTotal = line.LineTotal,
         TaxRate = line.TaxRate,

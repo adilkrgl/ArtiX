@@ -27,12 +27,15 @@ public class ProductsController : ControllerBase
         BranchId = p.BranchId,
         ProductTypeId = p.ProductTypeId,
         ManufacturerId = p.ManufacturerId,
+        ManufacturerName = p.Manufacturer == null ? null : p.Manufacturer.Name,
+        ManufacturerCode = p.Manufacturer == null ? null : p.Manufacturer.Code,
         Name = p.Name,
         Sku = p.Sku,
         Barcode = p.Barcode,
         CostPrice = p.CostPrice,
         RetailPrice = p.RetailPrice,
         WholesalePrice = p.WholesalePrice,
+        IsTaxInclusive = p.IsTaxInclusive,
         IsActive = p.IsActive,
         Manufacturer = p.Manufacturer == null
             ? null
@@ -168,6 +171,7 @@ public class ProductsController : ControllerBase
             CostPrice = request.CostPrice,
             RetailPrice = request.RetailPrice,
             WholesalePrice = request.WholesalePrice,
+            IsTaxInclusive = request.IsTaxInclusive ?? false,
             IsActive = request.IsActive,
             CreatedAt = DateTime.UtcNow
         };
@@ -232,6 +236,10 @@ public class ProductsController : ControllerBase
         product.CostPrice = request.CostPrice;
         product.RetailPrice = request.RetailPrice;
         product.WholesalePrice = request.WholesalePrice;
+        if (request.IsTaxInclusive.HasValue)
+        {
+            product.IsTaxInclusive = request.IsTaxInclusive.Value;
+        }
         product.IsActive = request.IsActive;
         product.UpdatedAt = DateTime.UtcNow;
 
@@ -264,12 +272,15 @@ public class ProductsController : ControllerBase
         BranchId = entity.BranchId,
         ProductTypeId = entity.ProductTypeId,
         ManufacturerId = entity.ManufacturerId,
+        ManufacturerName = entity.Manufacturer?.Name,
+        ManufacturerCode = entity.Manufacturer?.Code,
         Name = entity.Name,
         Sku = entity.Sku,
         Barcode = entity.Barcode,
         CostPrice = entity.CostPrice,
         RetailPrice = entity.RetailPrice,
         WholesalePrice = entity.WholesalePrice,
+        IsTaxInclusive = entity.IsTaxInclusive,
         IsActive = entity.IsActive,
         Manufacturer = entity.Manufacturer is null ? null : new ManufacturerDto
         {

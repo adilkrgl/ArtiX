@@ -27,6 +27,8 @@ public class InvoiceLine : BaseEntity
     public decimal DiscountRate { get; set; }
     public decimal DiscountAmount { get; set; }
 
+    public bool IsTaxInclusive { get; set; }
+
     public decimal LineSubtotal { get; set; }
     public decimal LineTotal { get; set; }
 

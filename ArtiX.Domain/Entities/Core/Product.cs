@@ -22,6 +22,8 @@ public class Product : BaseEntity
 
     public decimal WholesalePrice { get; set; } = 0m;
 
+    public bool IsTaxInclusive { get; set; }
+
     public decimal TaxRate { get; set; } = 0m;
 
     public Guid? ManufacturerId { get; set; }

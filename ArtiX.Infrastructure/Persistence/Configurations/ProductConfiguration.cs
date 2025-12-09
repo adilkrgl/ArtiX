@@ -23,6 +23,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
         builder.Property(p => p.WholesalePrice)
             .HasPrecision(18, 2);
 
+        builder.Property(p => p.IsTaxInclusive)
+            .HasDefaultValue(false);
+
         builder.Property(p => p.TaxRate)
             .HasPrecision(5, 2);
 

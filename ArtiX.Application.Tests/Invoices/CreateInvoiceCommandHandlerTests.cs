@@ -182,6 +182,117 @@ public class CreateInvoiceCommandHandlerTests
         }
     }
 
+    [Fact]
+    public async Task CreateInvoice_Should_Respect_Product_Tax_Inclusive_Mode()
+    {
+        var companyId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+
+        var (context, handler, _) = CreateHandlerWithSeededProduct(
+            companyId,
+            productId,
+            120m,
+            20m,
+            "Tax inclusive product",
+            "TI-120",
+            isTaxInclusive: true);
+
+        using (context)
+        {
+            var command = new CreateInvoiceCommand
+            {
+                CompanyId = companyId,
+                InvoiceDate = new DateTime(2024, 5, 1),
+                CurrencyCode = "GBP",
+                Lines = new List<CreateInvoiceLineDto>
+                {
+                    new()
+                    {
+                        ProductId = productId,
+                        Quantity = 2m,
+                        DiscountRate = 0m,
+                        CustomDescription = "Inclusive item"
+                    }
+                }
+            };
+
+            var invoiceId = await handler.Handle(command, CancellationToken.None);
+
+            var invoice = await context.Invoices
+                .Include(i => i.Lines)
+                .SingleAsync(i => i.Id == invoiceId);
+
+            var line = invoice.Lines.Single();
+
+            line.IsTaxInclusive.Should().BeTrue();
+            line.LineSubtotal.Should().Be(200m);
+            line.LineTotal.Should().Be(200m);
+            line.TaxAmount.Should().Be(40m);
+            line.LineTotalWithTax.Should().Be(240m);
+
+            invoice.Subtotal.Should().Be(200m);
+            invoice.DiscountTotal.Should().Be(0m);
+            invoice.TaxTotal.Should().Be(40m);
+            invoice.Total.Should().Be(240m);
+        }
+    }
+
+    [Fact]
+    public async Task CreateInvoice_Should_Apply_Discount_Before_Tax_Split_When_Inclusive()
+    {
+        var companyId = Guid.NewGuid();
+        var productId = Guid.NewGuid();
+
+        var (context, handler, _) = CreateHandlerWithSeededProduct(
+            companyId,
+            productId,
+            120m,
+            20m,
+            "Tax inclusive discounted",
+            "TI-DISC",
+            isTaxInclusive: true);
+
+        using (context)
+        {
+            var command = new CreateInvoiceCommand
+            {
+                CompanyId = companyId,
+                InvoiceDate = new DateTime(2024, 6, 1),
+                CurrencyCode = "GBP",
+                Lines = new List<CreateInvoiceLineDto>
+                {
+                    new()
+                    {
+                        ProductId = productId,
+                        Quantity = 2m,
+                        DiscountRate = 10m,
+                        CustomDescription = "Inclusive discounted"
+                    }
+                }
+            };
+
+            var invoiceId = await handler.Handle(command, CancellationToken.None);
+
+            var invoice = await context.Invoices
+                .Include(i => i.Lines)
+                .SingleAsync(i => i.Id == invoiceId);
+
+            var line = invoice.Lines.Single();
+
+            line.IsTaxInclusive.Should().BeTrue();
+            line.DiscountAmount.Should().Be(24m);
+            line.LineSubtotal.Should().Be(180m);
+            line.LineTotal.Should().Be(180m);
+            line.TaxAmount.Should().Be(36m);
+            line.LineTotalWithTax.Should().Be(216m);
+
+            invoice.Subtotal.Should().Be(180m);
+            invoice.DiscountTotal.Should().Be(24m);
+            invoice.TaxTotal.Should().Be(36m);
+            invoice.Total.Should().Be(216m);
+        }
+    }
+
     private static (ErpDbContext Context, CreateInvoiceCommandHandler Handler, Product Product) CreateHandlerWithSeededProduct(
         Guid companyId,
         Guid productId,
@@ -189,7 +300,8 @@ public class CreateInvoiceCommandHandlerTests
         decimal taxRate,
         string productName,
         string sku,
-        Guid? customerId = null)
+        Guid? customerId = null,
+        bool isTaxInclusive = false)
     {
         var context = TestDbContextFactory.Create();
 
@@ -225,6 +337,7 @@ public class CreateInvoiceCommandHandlerTests
             Name = productName,
             Sku = sku,
             RetailPrice = retailPrice,
+            IsTaxInclusive = isTaxInclusive,
             TaxRate = taxRate,
             CreatedAt = DateTime.UtcNow
         };
